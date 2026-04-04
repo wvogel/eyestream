@@ -1396,6 +1396,25 @@ html[data-theme="dark"] .activity-action--cat { color: #5ba5ff; }
 }
 
 /* =================================================
+   Empty State
+================================================= */
+.empty-state {
+  text-align: center;
+  padding: 3rem 2rem;
+}
+
+.empty-state h3 {
+  margin: 0 0 .5rem 0;
+  font-size: 1.15rem;
+}
+
+.empty-state p {
+  margin: 0 0 1.2rem 0;
+  opacity: .6;
+  font-size: .9rem;
+}
+
+/* =================================================
    Admin Look – Video card overrides
 ================================================= */
 .video-card {
