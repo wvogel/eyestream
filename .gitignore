@@ -1,0 +1,10 @@
+/data
+/postgres
+/valkey-data
+/backup
+__pycache__/
+*.py[cod]
+.DS_Store
+**/.DS_Store
+oauth2-proxy.env
+.env

@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>{{ t('page.upload') }}</h1>
+
+<div class="card upload-card">
+  <input type="file" id="file" accept="video/*">
+
+  <div class="upload-dropzone" id="upload-dropzone" tabindex="0" role="button" aria-label="{{ t('upload.dropzone_title') }}">
+    <div class="upload-drop-title">{{ t('upload.dropzone_title') }}</div>
+    <div class="upload-drop-meta">
+      <span id="file-name">{{ t('upload.no_file') }}</span>
+      <span id="file-size"></span>
+    </div>
+    <button type="button" class="button secondary upload-pick-btn" id="pick-btn">{{ t('button.choose_file') }}</button>
+  </div>
+
+  <div class="upload-actions">
+    <small id="upload-text">{{ t('upload.ready') }}</small>
+    <button class="button" id="upload-btn" onclick="startUpload()" disabled>
+      {{ t('button.start_upload') }}
+    </button>
+  </div>
+
+  <div class="progress" id="upload-progress" style="display:none">
+    <div class="progress-bar" id="upload-bar"></div>
+  </div>
+
+  <div class="upload-category">
+    <label>{{ t('label.category') }} <span class="required-mark">{{ t('label.required') }}</span></label>
+    <input type="hidden" id="upload-cat-value" name="category_id_custom" value="">
+    <div class="custom-select custom-select--input" id="upload-cat-select" data-value="">
+      <div class="custom-select-trigger is-placeholder">{{ t('placeholder.select_category') }} <svg class="custom-select-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
+      <div class="custom-select-options">
+        {% for d in categories %}
+        <div class="custom-select-option" data-value="{{ d.id }}">{{ d.name }}</div>
+        {% endfor %}
+      </div>
+    </div>
+    {% if not categories %}
+    <div class="upload-cat-hint">
+      {{ t('message.no_categories') }} <a href="/settings">{{ t('message.create_categories') }}</a>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="upload-note">
+    <label for="upload-note-input">{{ t('label.note') }}</label>
+    <textarea
+      id="upload-note-input"
+      maxlength="2000"
+      placeholder="{{ t('placeholder.note') }}"></textarea>
+  </div>
+</div>
+<script>
+let selectedFile = null;
+
+function formatBytes(bytes) {
+  if (!bytes) return "";
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  let size = bytes;
+  let i = 0;
+  while (size >= 1024 && i < units.length - 1) {
+    size /= 1024;
+    i += 1;
+  }
+  const decimals = i === 0 ? 0 : 1;
+  return size.toFixed(decimals) + " " + units[i];
+}
+
+function setSelectedFile(file) {
+  const btn = document.getElementById("upload-btn");
+  const fileName = document.getElementById("file-name");
+  const fileSize = document.getElementById("file-size");
+
+  selectedFile = file || null;
+
+  if (selectedFile) {
+    fileName.innerText = selectedFile.name;
+    fileSize.innerText = formatBytes(selectedFile.size);
+    btn.disabled = false;
+    // Detect video duration
+    try {
+      var tmpVideo = document.createElement("video");
+      tmpVideo.preload = "metadata";
+      tmpVideo.onloadedmetadata = function () {
+        var dur = tmpVideo.duration;
+        if (dur && isFinite(dur)) {
+          var m = Math.floor(dur / 60);
+          var s = Math.floor(dur % 60);
+          fileSize.innerText = formatBytes(selectedFile.size) + " · " + m + ":" + String(s).padStart(2, "0");
+        }
+        URL.revokeObjectURL(tmpVideo.src);
+      };
+      tmpVideo.src = URL.createObjectURL(selectedFile);
+    } catch (_) {}
+  } else {
+    fileName.innerText = T("upload.no_file");
+    fileSize.innerText = "";
+    btn.disabled = true;
+  }
+}
+
+function startUpload() {
+  if (!selectedFile) {
+    alert(T("upload.select_video"));
+    return;
+  }
+
+  var catVal = document.getElementById("upload-cat-value").value;
+  var catSelect = document.getElementById("upload-cat-select");
+  if (!catVal) {
+    catSelect.querySelector(".custom-select-trigger").classList.add("is-invalid");
+    return;
+  }
+
+  const formData = new FormData();
+  const noteInput = document.getElementById("upload-note-input");
+  formData.append("f", selectedFile);
+  formData.append("note", noteInput ? noteInput.value : "");
+  formData.append("category_id", catVal);
+
+  const xhr = new XMLHttpRequest();
+  xhr.open("POST", "/upload", true);
+
+  const progressBox = document.getElementById("upload-progress");
+  const bar = document.getElementById("upload-bar");
+  const txt = document.getElementById("upload-text");
+  const btn = document.getElementById("upload-btn");
+  const dropzone = document.getElementById("upload-dropzone");
+  const pickBtn = document.getElementById("pick-btn");
+
+  window._uploadInProgress = true;
+  window.onbeforeunload = function () { return T("upload.in_progress"); };
+
+  progressBox.style.display = "block";
+  bar.style.width = "0%";
+  bar.classList.add("flame-progress", "is-animating");
+  txt.innerText = T("upload.running", { pct: "0" });
+  btn.disabled = true;
+  pickBtn.disabled = true;
+  dropzone.classList.add("is-uploading");
+
+  xhr.upload.onprogress = function (e) {
+    if (e.lengthComputable) {
+      const pct = Math.round((e.loaded / e.total) * 100);
+      bar.style.width = pct + "%";
+      txt.innerText = T("upload.running", { pct: pct });
+    }
+  };
+
+  xhr.onload = function () {
+    window._uploadInProgress = false;
+    window.onbeforeunload = null;
+    if (xhr.status === 200 || xhr.status === 303) {
+      bar.style.width = "100%";
+      bar.classList.remove("is-animating");
+      txt.innerText = T("upload.complete");
+      setTimeout(function () {
+        window.location.href = "/";
+      }, 450);
+    } else {
+      txt.innerText = T("upload.failed", { status: xhr.status });
+      btn.disabled = false;
+      pickBtn.disabled = false;
+      bar.classList.remove("is-animating");
+      dropzone.classList.remove("is-uploading");
+    }
+  };
+
+  xhr.onerror = function () {
+    window._uploadInProgress = false;
+    window.onbeforeunload = null;
+    txt.innerText = T("upload.error");
+    btn.disabled = false;
+    pickBtn.disabled = false;
+    bar.classList.remove("is-animating");
+    dropzone.classList.remove("is-uploading");
+  };
+
+  xhr.send(formData);
+}
+
+(function setupUploadUI() {
+  const fileInput = document.getElementById("file");
+  const pickBtn = document.getElementById("pick-btn");
+  const dropzone = document.getElementById("upload-dropzone");
+
+  fileInput.addEventListener("change", function () {
+    setSelectedFile(fileInput.files[0] || null);
+  });
+
+  pickBtn.addEventListener("click", function () {
+    fileInput.click();
+  });
+
+  dropzone.addEventListener("click", function (e) {
+    if (e.target.closest("button")) return;
+    fileInput.click();
+  });
+
+  dropzone.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      fileInput.click();
+    }
+  });
+
+  ["dragenter", "dragover"].forEach(function (eventName) {
+    dropzone.addEventListener(eventName, function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      dropzone.classList.add("is-dragover");
+    });
+  });
+
+  ["dragleave", "drop"].forEach(function (eventName) {
+    dropzone.addEventListener(eventName, function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      dropzone.classList.remove("is-dragover");
+    });
+  });
+
+  dropzone.addEventListener("drop", function (e) {
+    const files = e.dataTransfer && e.dataTransfer.files;
+    if (!files || !files.length) return;
+    if (typeof DataTransfer !== "undefined") {
+      const dt = new DataTransfer();
+      dt.items.add(files[0]);
+      fileInput.files = dt.files;
+    }
+    setSelectedFile(files[0]);
+  });
+})();
+
+// Wire up upload category custom select + remember last choice
+var uploadCatSel = document.getElementById("upload-cat-select");
+if (uploadCatSel) {
+  // Restore last used category
+  var lastCat = localStorage.getItem("eyestream-last-cat");
+  if (lastCat) {
+    var opts = uploadCatSel.querySelectorAll(".custom-select-option");
+    opts.forEach(function (opt) {
+      if (opt.dataset.value === lastCat) {
+        opt.click();
+      }
+    });
+  }
+
+  uploadCatSel.addEventListener("change", function (e) {
+    document.getElementById("upload-cat-value").value = e.detail.value;
+    uploadCatSel.querySelector(".custom-select-trigger").classList.remove("is-invalid");
+    localStorage.setItem("eyestream-last-cat", e.detail.value);
+  });
+}
+</script>
+{% endblock %}

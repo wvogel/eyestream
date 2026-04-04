@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="{{ get_language() }}">
+<head>
+  <meta charset="utf-8">
+  <title>{{ product_name }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+  <link rel="shortcut icon" type="image/x-icon" href="/static/favicon.ico">
+  <link rel="stylesheet" href="/static/base.css?v={{ app_version }}">
+  <link rel="stylesheet" href="/static/components.css?v={{ app_version }}">
+  <link rel="stylesheet" href="/static/pages.css?v={{ app_version }}">
+  <script>
+  (function(){
+    var t = localStorage.getItem("eyestream-theme");
+    if (t === "light") document.documentElement.setAttribute("data-theme", "light");
+    else if (t === "dark") document.documentElement.setAttribute("data-theme", "dark");
+    else document.documentElement.setAttribute("data-theme", window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    // Sync brand glow animation to clock so it never restarts on navigation
+    var s = (Date.now() / 1000) % 60;
+    document.documentElement.style.setProperty("--brand-glow-delay", "-" + s.toFixed(1) + "s");
+  })();
+  </script>
+  {% block head %}{% endblock %}
+</head>
+<body>
+<div id="login-splash" class="login-splash" aria-hidden="true">
+  <div class="login-splash-inner">
+    {% if logo_url %}<img class="login-splash-brand" src="{{ logo_url }}" alt="">{% endif %}
+    <img class="login-splash-flame" src="/static/flame-play.svg" alt="">
+    <h2>{{ product_name }}</h2>
+  </div>
+</div>
+<header>
+  <div class="header-inner">
+
+    <!-- Brand / Home -->
+    <a href="/" class="header-brand">
+      {% if logo_url %}<img
+        src="{{ logo_url }}"
+        alt="{{ brand_name }}"
+        class="logo">{% endif %}
+      <img
+        src="/static/flame-play.svg"
+        alt=""
+        class="header-flame">
+      <span class="brand-title">{{ product_name }}</span>
+    </a>
+
+    <div class="header-right">
+      {% if example_page_url %}
+      <a
+        class="header-example-link"
+        href="{{ example_page_url }}"
+        target="_blank"
+        rel="noopener noreferrer"
+        title="{{ t('header.example_link_title') }}">
+        <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        <span>{{ t('header.example_link_text') }}</span>
+      </a>
+      {% endif %}
+      <a class="header-nav-link{% if request.url.path == '/' or request.url.path == '/upload' %} is-active{% endif %}"
+         href="/" title="{{ t('header.home_title') }}">
+        <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </a>
+      <a class="header-nav-link{% if request.url.path == '/stats' %} is-active{% endif %}"
+         href="/stats" title="{{ t('header.stats_title') }}">
+        <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="14" width="4" height="8" rx="1"/><rect x="10" y="8" width="4" height="14" rx="1"/><rect x="16" y="2" width="4" height="20" rx="1"/></svg>
+      </a>
+      <a class="header-nav-link{% if request.url.path == '/activity' %} is-active{% endif %}"
+         href="/activity" title="{{ t('header.activity_title') }}">
+        <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="13" y2="16"/></svg>
+      </a>
+      <a class="header-nav-link{% if request.url.path == '/settings' %} is-active{% endif %}"
+         href="/settings" title="{{ t('header.settings_title') }}">
+        <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </a>
+      <button class="header-lang-toggle" onclick="toggleLanguage()" title="{{ t('header.theme_toggle_title') }}">
+        <span class="lang-label">{{ get_language()|upper }}</span>
+      </button>
+      <button class="header-theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="{{ t('header.theme_toggle_title') }}">
+        <span class="theme-icon theme-icon-light" aria-hidden="true">&#9788;</span>
+        <span class="theme-icon theme-icon-dark" aria-hidden="true">&#9790;</span>
+        <span class="theme-icon theme-icon-auto" aria-hidden="true">&#9680;</span>
+      </button>
+      {% if email %}
+        <span class="user-email">{{ email }}</span>
+      {% endif %}
+      <a class="logout" href="/oauth2/sign_out" title="Logout">
+        <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </a>
+    </div>
+
+  </div>
+</header>
+
+<main>
+  {% block content %}{% endblock %}
+</main>
+
+<footer>
+  <div class="footer-inner">
+    {% for link in footer_links %}
+      {% if not loop.first %}<span class="footer-sep">·</span>{% endif %}
+      <a href="{{ link.url }}" target="_blank" rel="noopener noreferrer">{{ link.label }}</a>
+    {% endfor %}
+    {% if copyright_text %}
+      {% if footer_links %}<span class="footer-sep">·</span>{% endif %}
+      {{ copyright_text }}
+    {% endif %}
+    {% if footer_links or copyright_text %}<span class="footer-sep">·</span>{% endif %}
+    <span class="footer-version">{{ app_version }}</span>
+  </div>
+</footer>
+
+<script>
+// i18n: translation data and helper
+var LANG = "{{ get_language() }}";
+var T_DATA = {{ get_translations_json()|safe }};
+function T(key, vars) {
+  var s = T_DATA[key] || key;
+  if (vars) { for (var k in vars) { s = s.replace("{" + k + "}", vars[k]); } }
+  return s;
+}
+
+function toggleLanguage() {
+  var langs = {{ supported_languages|tojson }};
+  var idx = langs.indexOf(LANG);
+  var next = langs[(idx + 1) % langs.length];
+  localStorage.setItem("eyestream-lang", next);
+  document.cookie = "eyestream-lang=" + next + ";path=/;max-age=31536000;SameSite=Lax";
+  location.reload();
+}
+
+// Sync localStorage lang to cookie on load
+(function syncLangCookie() {
+  var saved = localStorage.getItem("eyestream-lang");
+  if (saved && saved !== LANG) {
+    document.cookie = "eyestream-lang=" + saved + ";path=/;max-age=31536000;SameSite=Lax";
+    location.reload();
+  }
+  if (!saved) {
+    localStorage.setItem("eyestream-lang", LANG);
+  }
+})();
+
+// Global HTML escape helper
+function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+(function initThemeToggle() {
+  var states = ["light", "dark", "auto"];
+  var current = localStorage.getItem("eyestream-theme") || "auto";
+  applyTheme(current);
+
+  window.toggleTheme = function () {
+    var idx = (states.indexOf(current) + 1) % states.length;
+    current = states[idx];
+    localStorage.setItem("eyestream-theme", current);
+    applyTheme(current);
+  };
+
+  function applyTheme(t) {
+    var html = document.documentElement;
+    var btn = document.getElementById("theme-toggle");
+    if (t === "light") html.setAttribute("data-theme", "light");
+    else if (t === "dark") html.setAttribute("data-theme", "dark");
+    else html.setAttribute("data-theme", window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    if (btn) btn.setAttribute("data-state", t);
+  }
+
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () {
+    if (current === "auto") applyTheme("auto");
+  });
+})();
+
+(function initCustomSelects() {
+  document.addEventListener("click", function (e) {
+    // Close all open dropdowns when clicking outside
+    document.querySelectorAll(".custom-select.is-open").forEach(function (sel) {
+      if (!sel.contains(e.target)) {
+        sel.classList.remove("is-open");
+      }
+    });
+  });
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") {
+      document.querySelectorAll(".custom-select.is-open").forEach(function (sel) {
+        sel.classList.remove("is-open");
+      });
+    }
+  });
+
+  document.querySelectorAll(".custom-select").forEach(function (sel) {
+    var trigger = sel.querySelector(".custom-select-trigger");
+    var options = sel.querySelectorAll(".custom-select-option");
+
+    trigger.addEventListener("click", function (e) {
+      e.stopPropagation();
+      // Close others
+      document.querySelectorAll(".custom-select.is-open").forEach(function (other) {
+        if (other !== sel) other.classList.remove("is-open");
+      });
+      sel.classList.toggle("is-open");
+    });
+
+    options.forEach(function (opt) {
+      opt.addEventListener("click", function (e) {
+        e.stopPropagation();
+        var val = opt.dataset.value;
+        var label = opt.textContent;
+        sel.dataset.value = val;
+
+        // Update selected state
+        options.forEach(function (o) { o.classList.remove("is-selected"); });
+        opt.classList.add("is-selected");
+
+        // Update trigger text
+        trigger.childNodes[0].textContent = label + " ";
+
+        // Update placeholder state
+        trigger.classList.toggle("is-placeholder", !val);
+
+        // Update hidden input if present
+        var hidden = sel.querySelector("input[type=hidden]");
+        if (hidden) hidden.value = val;
+
+        sel.classList.remove("is-open");
+
+        // Dispatch change event
+        sel.dispatchEvent(new CustomEvent("change", { detail: { value: val, label: label } }));
+      });
+    });
+  });
+})();
+
+// Pagination: set col 1 width = col 7 width
+function layoutPagination() {
+  document.querySelectorAll(".pagination").forEach(function (pag) {
+    var ps = pag.querySelector(".pagination-size");
+    var w = ps ? ps.getBoundingClientRect().width : 0;
+    pag.style.setProperty("--pag-col1", w + "px");
+  });
+}
+layoutPagination();
+window.addEventListener("resize", layoutPagination);
+
+(function () {
+  const splash = document.getElementById("login-splash");
+  const key = "eyestream-login-splash-v1";
+
+  if (!splash) return;
+
+  // Zeige den Splash nur beim Session-Start.
+  if (sessionStorage.getItem(key) === "1") {
+    splash.remove();
+    return;
+  }
+
+  sessionStorage.setItem(key, "1");
+
+  document.body.classList.add("has-login-splash");
+  requestAnimationFrame(() => splash.classList.add("is-visible"));
+
+  setTimeout(() => {
+    splash.classList.add("is-hiding");
+    document.body.classList.remove("has-login-splash");
+    setTimeout(() => splash.remove(), 1150);
+  }, 2850);
+})();
+</script>
+</body>
+</html>

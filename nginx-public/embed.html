@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link id="oembed-link" rel="alternate" type="application/json+oembed" href="" title="Eyestream">
+<title>Video</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden}
+body{background:#0f1220}
+@media(prefers-color-scheme:light){body{background:#f6f8fb}}
+.player{position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.player img{width:100%;height:100%;object-fit:contain;display:block}
+.player video{width:100%;height:100%;object-fit:contain;display:block;background:transparent}
+.play-btn{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:clamp(2.5rem,8vw,4.5rem);color:rgba(255,255,255,.92);text-shadow:0 4px 18px rgba(0,0,0,.6);pointer-events:none;transition:opacity .2s ease}
+.player:hover .play-btn{opacity:1}
+.play-btn{opacity:.85}
+.err{color:#ff6b6b;font-family:system-ui;font-size:.9rem;text-align:center;padding:2rem}
+</style>
+</head>
+<body>
+<div class="player" id="player">
+  <div class="err" id="err" hidden>Video nicht gefunden</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js" integrity="sha384-9v3HcdYrO3D+OPDTjZ40RXocgE4GtXVCd3/mCS62JsM93JXgI1afJVuwjFvsu6ni" crossorigin="anonymous"></script>
+<script>
+(function(){
+  var m = window.location.pathname.match(/^\/embed\/(\d+)$/);
+  if (!m) { document.getElementById("err").hidden = false; return; }
+  var id = m[1];
+  document.title = "Video " + id;
+  var oembedLink = document.getElementById("oembed-link");
+  if (oembedLink) oembedLink.href = "/oembed?url=" + encodeURIComponent(window.location.href);
+  var posterUrl = "/" + id + "/poster.jpg";
+  var playlistUrl = "/" + id + "/master.m3u8";
+  var player = document.getElementById("player");
+
+  var img = document.createElement("img");
+  img.alt = "Video Poster";
+
+  var playBtn = document.createElement("div");
+  playBtn.className = "play-btn";
+  playBtn.innerHTML = "&#9654;";
+
+  var videoStarted = false;
+
+  function startVideo() {
+    if (videoStarted) return;
+    videoStarted = true;
+    player.style.cursor = "default";
+
+    var video = document.createElement("video");
+    video.controls = true;
+    video.autoplay = true;
+    video.playsInline = true;
+    video.poster = posterUrl;
+    video.style.width = "100%";
+    video.style.height = "100%";
+    video.style.objectFit = "contain";
+
+    while (player.firstChild) player.firstChild.remove();
+    player.appendChild(video);
+
+    if (window.Hls && Hls.isSupported()) {
+      var hls = new Hls();
+      hls.loadSource(playlistUrl);
+      hls.attachMedia(video);
+    } else {
+      video.src = playlistUrl;
+    }
+  }
+
+  player.appendChild(img);
+  player.appendChild(playBtn);
+  player.addEventListener("click", startVideo);
+
+  // Hover preview thumbnails
+  var previewUrls = null;
+  var previewTimer = null;
+  var previewIdx = 0;
+
+  player.addEventListener("mouseenter", function () {
+    if (videoStarted) return;
+    if (previewUrls) { startRotation(); return; }
+    fetch("/" + id + "/previews_lg.json", { cache: "force-cache" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (data) {
+        if (!data || !data.length) return;
+        previewUrls = data.map(function (p) { return "/" + id + "/" + p.f; });
+        startRotation();
+      })
+      .catch(function () {});
+  });
+
+  player.addEventListener("mouseleave", function () {
+    if (previewTimer) { clearInterval(previewTimer); previewTimer = null; }
+    if (!videoStarted) img.src = posterUrl;
+  });
+
+  function startRotation() {
+    if (!previewUrls || videoStarted) return;
+    previewIdx = 0;
+    img.src = previewUrls[0];
+    previewTimer = setInterval(function () {
+      previewIdx = (previewIdx + 1) % previewUrls.length;
+      img.src = previewUrls[previewIdx];
+    }, 600);
+  }
+
+  // Load poster — show error only if both poster AND playlist fail
+  img.onerror = function () {
+    // Try loading the playlist to check if video exists
+    fetch(playlistUrl, { method: "HEAD" }).then(function (r) {
+      if (!r.ok) {
+        document.getElementById("err").innerText = "Dieses Video ist nicht verfügbar.";
+        document.getElementById("err").hidden = false;
+        player.removeEventListener("click", startVideo);
+        player.style.cursor = "default";
+      }
+    }).catch(function () {});
+  };
+  img.src = posterUrl;
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-title-bar settings-title-bar">
+  <h1 class="page-title">{{ t('page.activity') }}</h1>
+  <a class="button secondary" href="/">{{ t('button.back') }}</a>
+</div>
+
+<div class="card settings-card">
+  {% if entries %}
+  <table class="activity-table">
+    <thead>
+      <tr>
+        <th>{{ t('activity.timestamp') }}</th>
+        <th>{{ t('activity.user') }}</th>
+        <th>{{ t('activity.action') }}</th>
+        <th>{{ t('activity.target') }}</th>
+        <th>{{ t('activity.details') }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for e in entries %}
+      <tr>
+        <td class="activity-ts">{{ e.ts_local }}</td>
+        <td class="activity-user">{{ e.user_email }}</td>
+        <td><span class="activity-action activity-action--{{ e.action }}">{{ e.action }}</span></td>
+        <td>{{ e.target }}</td>
+        <td class="activity-detail">{{ e.detail }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p style="opacity:.6;text-align:center;padding:1rem 0">{{ t('message.no_activities') }}</p>
+  {% endif %}
+</div>
+
+{% if pages > 1 %}
+<div class="pagination pagination--simple">
+  <div class="pagination-left">
+    <span class="pagination-line"></span>
+    {% if page > 1 %}<a href="/activity?page={{ page - 1 }}" class="secondary">{{ t('button.previous') }}</a>{% endif %}
+  </div>
+  <span class="pagination-info">{{ t('pagination.info', page=page, pages=pages) }}</span>
+  <div class="pagination-right">
+    {% if page < pages %}<a href="/activity?page={{ page + 1 }}" class="secondary">{{ t('button.next') }}</a>{% endif %}
+    <span class="pagination-line"></span>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

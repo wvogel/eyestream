@@ -1,0 +1,34 @@
+hls_time_seconds: 6
+
+renditions:
+  - name: "1080p"
+    height: 1080
+    v_bitrate: "9000k"
+    maxrate: "9800k"
+    bufsize: "20000k"
+    profile: "high"
+    a_bitrate: "160k"
+
+  - name: "720p"
+    height: 720
+    v_bitrate: "4500k"
+    maxrate: "5000k"
+    bufsize: "10000k"
+    profile: "high"
+    a_bitrate: "128k"
+
+  - name: "480p"
+    height: 480
+    v_bitrate: "2200k"
+    maxrate: "2500k"
+    bufsize: "5000k"
+    profile: "main"
+    a_bitrate: "96k"
+
+  - name: "360p"
+    height: 360
+    v_bitrate: "1200k"
+    maxrate: "1400k"
+    bufsize: "3000k"
+    profile: "baseline"
+    a_bitrate: "96k"

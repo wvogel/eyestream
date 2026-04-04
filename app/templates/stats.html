@@ -1,0 +1,316 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-title-bar settings-title-bar">
+  <h1 class="page-title">{{ t('page.stats') }}</h1>
+  <a class="button secondary" href="/">{{ t('button.back') }}</a>
+</div>
+
+<div class="card settings-card">
+  <div class="stats-unified-grid">
+    <!-- Row 1: Tiles + Worker -->
+    <div class="stats-card">
+      <div class="stats-card-value stats-skeleton" id="stat-total">–</div>
+      <div class="stats-card-label">{{ t('stat.videos') }}</div>
+      <div class="stats-card-detail" id="stat-total-detail"></div>
+    </div>
+    <div class="stats-card">
+      <div class="stats-card-value stats-skeleton" id="stat-duration">–</div>
+      <div class="stats-card-label">{{ t('stat.total_duration') }}</div>
+    </div>
+    <div class="stats-card" title="{{ t('stat.encoding_factor_title') }}">
+      <div class="stats-card-value stats-skeleton" id="stat-encoding">–</div>
+      <div class="stats-card-label">{{ t('stat.encoding_factor') }}</div>
+    </div>
+    <div class="stats-card worker-status-card" id="worker-status" hidden>
+      <div class="stats-card-value" id="worker-value">–</div>
+      <div class="stats-card-label" id="worker-label">{{ t('stat.cpu') }}</div>
+      <div class="stats-card-detail" id="worker-detail"></div>
+    </div>
+    <!-- Row 2: Pie + Names + Bars (2 cols) -->
+    <div class="stats-pie-wrap">
+      <div class="stats-pie stats-skeleton" id="stats-pie"></div>
+      <div class="stats-pie-legend" id="stats-pie-legend"></div>
+    </div>
+    <div class="stats-cat-names" id="stats-cat-names"></div>
+    <div class="stats-cat-bars stats-col-span-2" id="stats-cat-bars"></div>
+  </div>
+  <div class="stats-orphaned-wrap" id="stats-orphaned-wrap" hidden></div>
+</div>
+
+<div class="card settings-card" id="trend-card" hidden>
+  <h2 class="settings-section-title">{{ t('stat.views') }}</h2>
+  <div id="trend-chart-wrap"></div>
+  <div class="stats-card-footnote" id="trend-period"></div>
+</div>
+
+<div class="card settings-card" id="referer-stats-card" hidden>
+  <h2 class="settings-section-title">{{ t('stat.top_referer') }}</h2>
+  <div class="stats-cat-names" id="referer-names" style="text-align:left"></div>
+  <div class="stats-card-footnote" id="referer-period"></div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+(function loadStats() {
+  fetch("/settings/stats")
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      document.querySelectorAll(".stats-skeleton").forEach(function (el) {
+        el.classList.remove("stats-skeleton");
+      });
+
+      document.getElementById("stat-total").innerText = fmtNum(d.total_videos);
+      var detail = document.getElementById("stat-total-detail");
+      var rows = [];
+      if (d.ready_count) rows.push([d.ready_count, T("stat.ready")]);
+      if (d.encoding_count) rows.push([d.encoding_count, T("stat.encoding")]);
+      if (d.queued_count) rows.push([d.queued_count, T("stat.queued")]);
+      if (d.other_count) rows.push([d.other_count, T("stat.other")]);
+      if (rows.length) {
+        detail.innerHTML = '<div class="stat-detail-grid">' + rows.map(function (r) {
+          return '<span class="stat-detail-num">' + fmtNum(r[0]) + '</span><span class="stat-detail-label">' + r[1] + '</span>';
+        }).join("") + '</div>';
+      }
+      document.getElementById("stat-duration").innerText = formatDuration(d.total_duration);
+      document.getElementById("stat-encoding").innerText = (typeof d.avg_encoding_factor === "number" && d.avg_encoding_factor > 0) ? (d.avg_encoding_factor.toFixed(2) + "\u00d7") : "\u2013";
+
+      // Worker status (initial)
+      if (d.worker) updateWorkerBox(d.worker);
+
+      // Warnings in footer area
+      var warnWrap = document.getElementById("stats-orphaned-wrap");
+      var warnings = [];
+
+      if (d.disk && d.disk.partition_total > 0) {
+        var usedPct = ((d.disk.partition_total - d.disk.partition_free) / d.disk.partition_total * 100);
+        if (usedPct > 90) {
+          warnings.push('<div class="disk-warning">' + T("warning.disk_full", { pct: usedPct.toFixed(1) }) + '</div>');
+        }
+      }
+
+      if (d.orphaned && d.orphaned.count > 0) {
+        var orphId = "orphaned-details";
+        var orphMsg = d.orphaned.count !== 1
+          ? T("warning.orphaned_other", { count: d.orphaned.count })
+          : T("warning.orphaned_one", { count: d.orphaned.count });
+        warnings.push(
+          '<div class="disk-warning">' + orphMsg + ' ' +
+          '<button class="referer-details-btn" onclick="var el=document.getElementById(\'' + orphId + '\');el.hidden=!el.hidden;this.innerText=el.hidden?T(\'button.details\'):T(\'button.collapse\')">' + T("button.details") + '</button>' +
+          '<div id="' + orphId + '" class="orphaned-file-list" hidden>' +
+          d.orphaned.files.map(function (f) { return '<div class="orphaned-file">' + esc(f) + '</div>'; }).join("") +
+          '</div></div>'
+        );
+      }
+
+      if (warnings.length) {
+        warnWrap.hidden = false;
+        warnWrap.innerHTML = warnings.join("");
+      }
+
+      // Pie chart
+      var disk = d.disk;
+      var uploads = disk.uploads_bytes;
+      var hls = disk.hls_bytes;
+      var free = disk.partition_free;
+      var total = disk.partition_total || 1;
+      var otherUsed = Math.max(0, disk.partition_used - uploads - hls);
+
+      var pUploads = (uploads / total * 100);
+      var pHls = (hls / total * 100);
+      var pOther = (otherUsed / total * 100);
+      var pFree = (free / total * 100);
+
+      var pie = document.getElementById("stats-pie");
+      pie.style.background = "conic-gradient(" +
+        "var(--flame-3) 0% " + pUploads + "%, " +
+        "var(--flame-2) " + pUploads + "% " + (pUploads + pHls) + "%, " +
+        "rgba(120,130,160,.35) " + (pUploads + pHls) + "% " + (pUploads + pHls + pOther) + "%, " +
+        "rgba(120,130,160,.12) " + (pUploads + pHls + pOther) + "% 100%)";
+
+      var legend = document.getElementById("stats-pie-legend");
+      legend.innerHTML =
+        '<span class="stats-legend-item"><span class="stats-legend-dot" style="background:var(--flame-3)"></span>' + T("pie.uploads") + ' ' + formatBytes(uploads) + '</span>' +
+        '<span class="stats-legend-item"><span class="stats-legend-dot" style="background:var(--flame-2)"></span>' + T("pie.hls") + ' ' + formatBytes(hls) + '</span>' +
+        '<span class="stats-legend-item"><span class="stats-legend-dot" style="background:rgba(120,130,160,.35)"></span>' + T("pie.system") + ' ' + formatBytes(otherUsed) + '</span>' +
+        '<span class="stats-legend-item"><span class="stats-legend-dot" style="background:rgba(120,130,160,.12)"></span>' + T("pie.free") + ' ' + formatBytes(free) + '</span>';
+
+      // Category bars — interactive sorting
+      var catData = d.by_category || [];
+      var catTotal = d.total_videos || 1;
+      var savedSort = localStorage.getItem("eyestream-cat-sort");
+      var nameSort = 1; // default: alphabetical A-Z
+      var barMode = 2;  // default: 100%=max, desc
+      if (savedSort) { try { var s = JSON.parse(savedSort); nameSort = s.n; barMode = s.b; } catch(_){} }
+
+      var namesEl = document.getElementById("stats-cat-names");
+      var barsEl = document.getElementById("stats-cat-bars");
+
+      if (!catData.length) {
+        namesEl.innerHTML = '<div class="stats-empty">' + T("message.no_data") + '</div>';
+        barsEl.innerHTML = '';
+      } else {
+        renderCatBars();
+      }
+
+      namesEl.style.cursor = "pointer";
+      namesEl.title = T("stat.sort_by_name");
+      barsEl.style.cursor = "pointer";
+      barsEl.title = T("stat.sort_toggle");
+
+      namesEl.addEventListener("click", function () {
+        nameSort = nameSort === 1 ? 2 : 1;
+        barMode = 2;
+        saveCatSort();
+        renderCatBars();
+      });
+
+      barsEl.addEventListener("click", function () {
+        barMode = (barMode + 1) % 4;
+        nameSort = 0;
+        saveCatSort();
+        renderCatBars();
+      });
+
+      function saveCatSort() {
+        localStorage.setItem("eyestream-cat-sort", JSON.stringify({ n: nameSort, b: barMode }));
+      }
+
+      function renderCatBars() {
+        var sorted = catData.slice();
+        if (nameSort === 1) sorted.sort(function (a, b) { return a.name.localeCompare(b.name); });
+        else if (nameSort === 2) sorted.sort(function (a, b) { return b.name.localeCompare(a.name); });
+        else if (barMode === 0) sorted.sort(function (a, b) { return b.count - a.count; });
+        else if (barMode === 1) sorted.sort(function (a, b) { return a.count - b.count; });
+        else if (barMode === 2) sorted.sort(function (a, b) { return b.count - a.count; });
+        else if (barMode === 3) sorted.sort(function (a, b) { return a.count - b.count; });
+
+        var maxCount = Math.max.apply(null, sorted.map(function (b) { return b.count; })) || 1;
+        var useSum = (barMode < 2 && nameSort === 0);
+        var base = useSum ? catTotal : maxCount;
+
+        var nh = '', bh = '';
+        sorted.forEach(function (b) {
+          var pct = Math.max(2, b.count / base * 100);
+          nh += '<div class="stats-cat-name">' + esc(b.name) + '</div>';
+          bh += '<div class="stats-bar-with-count"><div class="stats-bar-track"><div class="stats-bar-fill" style="width:' + pct + '%"></div></div><span class="stats-bar-count">' + b.count + '</span></div>';
+        });
+        namesEl.innerHTML = nh;
+        barsEl.innerHTML = bh;
+      }
+    })
+    .catch(function () {
+      document.querySelectorAll(".stats-skeleton").forEach(function (el) {
+        el.classList.remove("stats-skeleton");
+        el.innerText = "\u2013";
+      });
+    });
+})();
+
+// Top Referer
+(function loadRefererStats() {
+  fetch("/referers", { cache: "no-store" })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (data) {
+      if (!data) return;
+
+      // Trend chart
+      if (data.trend && data.trend.length > 1) {
+        var tCard = document.getElementById("trend-card");
+        tCard.hidden = false;
+        var trend = data.trend;
+        var maxH = Math.max.apply(null, trend.map(function (t) { return t.hits; })) || 1;
+        var w = 500, h = 160, pad = 30, padR = 10, padB = 25;
+        var cw = w - pad - padR, ch = h - pad - padB;
+        var points = trend.map(function (t, i) {
+          var x = pad + (i / (trend.length - 1)) * cw;
+          var y = pad + ch - (t.hits / maxH) * ch;
+          return { x: x, y: y, hits: t.hits, date: t.date };
+        });
+        var polyline = points.map(function (p) { return p.x + "," + p.y; }).join(" ");
+        var areaPath = "M" + pad + "," + (pad + ch) + " " + points.map(function (p) { return "L" + p.x + "," + p.y; }).join(" ") + " L" + points[points.length - 1].x + "," + (pad + ch) + " Z";
+
+        var svg = '<svg class="trend-chart" viewBox="0 0 ' + w + ' ' + h + '">';
+        svg += '<defs><linearGradient id="tg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--flame-3)" stop-opacity=".3"/><stop offset="100%" stop-color="var(--flame-2)" stop-opacity=".02"/></linearGradient></defs>';
+        svg += '<path d="' + areaPath + '" fill="url(#tg)"/>';
+        svg += '<polyline points="' + polyline + '" fill="none" stroke="var(--flame-3)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>';
+        points.forEach(function (p) {
+          var label = p.date.split("-");
+          svg += '<text x="' + p.x + '" y="' + (pad + ch + 16) + '" text-anchor="middle" class="trend-label">' + parseInt(label[2]) + '.' + parseInt(label[1]) + '.</text>';
+          svg += '<circle cx="' + p.x + '" cy="' + p.y + '" r="4" fill="var(--flame-2)" stroke="var(--card-bg)" stroke-width="2" class="trend-dot"><title>' + fmtNum(p.hits) + ' ' + T("stat.views") + '</title></circle>';
+          svg += '<text x="' + p.x + '" y="' + (p.y - 10) + '" text-anchor="middle" class="trend-value">' + fmtNum(p.hits) + '</text>';
+        });
+        svg += '</svg>';
+        document.getElementById("trend-chart-wrap").innerHTML = svg;
+
+        var tnow = new Date();
+        var tfrom = new Date(tnow.getTime() - 4 * 86400000);
+        var tfmt = function (d) { return d.getDate() + "." + (d.getMonth() + 1) + "." + d.getFullYear(); };
+        document.getElementById("trend-period").innerText = T("stat.period", { from: tfmt(tfrom), to: tfmt(tnow) });
+      }
+
+      if (!data.top_domains || !data.top_domains.length) return;
+      var card = document.getElementById("referer-stats-card");
+      card.hidden = false;
+      var now = new Date();
+      var from = new Date(now.getTime() - 4 * 86400000);
+      var fmt = function (d) { return d.getDate() + "." + (d.getMonth() + 1) + "." + d.getFullYear(); };
+      document.getElementById("referer-period").innerText = T("stat.period", { from: fmt(from), to: fmt(now) });
+      var container = document.getElementById("referer-names");
+      var maxHits = data.top_domains.reduce(function (s, d) { return s + d.hits; }, 0) || 1;
+      container.innerHTML = '<div class="stats-referer-list">' + data.top_domains.map(function (d) {
+        var pct = Math.max(2, d.hits / maxHits * 100);
+        return '<div class="stats-referer-row">' +
+          '<span class="stats-referer-domain">' + esc(d.domain) + '</span>' +
+          '<div class="stats-bar-track"><div class="stats-bar-fill" style="width:' + pct + '%"></div></div>' +
+          '<span class="stats-bar-count">' + fmtNum(d.hits) + '</span>' +
+          '</div>';
+      }).join("") + '</div>';
+    })
+    .catch(function () {});
+})();
+
+function updateWorkerBox(w) {
+  var ws = document.getElementById("worker-status");
+  if (!ws) return;
+  var isOk = w.status === "ok";
+  ws.hidden = false;
+  ws.classList.remove("worker-ok", "worker-stale");
+  ws.classList.add(isOk ? "worker-ok" : "worker-stale");
+  document.getElementById("worker-value").innerText = (isOk && typeof w.cpu_percent === "number") ? w.cpu_percent + "%" : "\u2013";
+  document.getElementById("worker-label").innerText = T("stat.cpu");
+  document.getElementById("worker-detail").innerText = isOk ? "Worker " + w.worker_status + " (" + w.last_seen_seconds_ago + "s)" : T("stat.worker_unreachable");
+}
+
+setInterval(function () {
+  fetch("/worker/status", { cache: "no-store" })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (w) { if (w) updateWorkerBox(w); })
+    .catch(function () {});
+}, 5000);
+
+function fmtNum(n) {
+  return Number(n).toLocaleString(LANG === "de" ? "de-DE" : "en-US");
+}
+
+function formatDuration(sec) {
+  if (!sec || sec <= 0) return "0:00";
+  sec = Math.round(sec);
+  var h = Math.floor(sec / 3600);
+  var m = Math.floor((sec % 3600) / 60);
+  var s = sec % 60;
+  if (h > 0) return h + ":" + String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0");
+  return m + ":" + String(s).padStart(2, "0");
+}
+
+function formatBytes(bytes) {
+  if (!bytes) return "0 B";
+  var units = ["B", "KB", "MB", "GB", "TB"];
+  var i = 0;
+  var size = bytes;
+  while (size >= 1024 && i < units.length - 1) { size /= 1024; i++; }
+  return (i === 0 ? size : size.toFixed(1)) + " " + units[i];
+}
+</script>
+{% endblock %}

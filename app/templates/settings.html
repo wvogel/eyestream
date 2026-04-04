@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-title-bar settings-title-bar">
+  <h1 class="page-title">{{ t('page.settings') }}</h1>
+  <a class="button secondary" href="/">{{ t('button.back') }}</a>
+</div>
+
+<div class="card settings-card">
+  <h2 class="settings-section-title">{{ t('settings.categories') }}</h2>
+  <p class="settings-section-desc">{{ t('settings.categories_desc') }}</p>
+
+  <div class="cat-create-row">
+    <form id="cat-create-form" class="cat-create-form" onsubmit="createCat(event)">
+      <input
+        id="cat-name-input"
+        type="text"
+        maxlength="100"
+        placeholder="{{ t('placeholder.new_category') }}"
+        aria-label="{{ t('placeholder.new_category_aria') }}"
+        required>
+      <button type="submit">{{ t('button.create') }}</button>
+    </form>
+  </div>
+
+  <div class="cat-list" id="cat-list">
+    {% if categories %}
+    {% for d in categories %}
+    <div class="cat-item" id="cat-item-{{ d.id }}" data-id="{{ d.id }}" onclick="window.location='/?cat={{ d.id }}'">
+      <div class="cat-item-display" id="cat-display-{{ d.id }}">
+        <span class="cat-name">{{ d.name }}</span>
+        <span class="cat-count pill">{{ d.video_count }} {{ t('label.video_count_other') if d.video_count != 1 else t('label.video_count_one') }}</span>
+        <div class="cat-item-actions" onclick="event.stopPropagation()">
+          <button type="button" class="secondary cat-edit-btn" onclick="startCatEdit({{ d.id }}, '{{ d.name | e }}')" title="{{ t('button.rename') }}">✎</button>
+          <button type="button" class="danger cat-delete-btn" onclick="deleteCat(this, {{ d.id }}, '{{ d.name | e }}', {{ d.video_count }})" title="{{ t('button.delete') }}">✕</button>
+        </div>
+      </div>
+      <form class="cat-item-edit" id="cat-edit-{{ d.id }}" onsubmit="saveCatEdit(event, {{ d.id }})" onclick="event.stopPropagation()" hidden>
+        <input
+          id="cat-edit-input-{{ d.id }}"
+          type="text"
+          maxlength="100"
+          value="{{ d.name }}"
+          required>
+        <button type="submit" class="secondary">{{ t('button.save') }}</button>
+        <button type="button" class="secondary" onclick="cancelCatEdit({{ d.id }})">{{ t('button.cancel') }}</button>
+      </form>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="cat-empty" id="cat-empty">
+      {{ t('message.no_categories') }}
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card settings-card">
+  <h2 class="settings-section-title">{{ t('settings.referer_exclusions') }}</h2>
+  <p class="settings-section-desc">{{ t('settings.referer_exclusions_desc') }}</p>
+
+  <div class="cat-create-row">
+    <form class="cat-create-form" onsubmit="createIgnore(event)">
+      <input
+        id="ignore-pattern-input"
+        type="text"
+        maxlength="200"
+        placeholder="{{ t('placeholder.pattern') }}"
+        aria-label="{{ t('placeholder.pattern_aria') }}"
+        required>
+      <button type="submit">{{ t('button.add') }}</button>
+    </form>
+  </div>
+
+  <div class="cat-list" id="ignore-list">
+    {% if referer_ignores %}
+    {% for r in referer_ignores %}
+    <div class="cat-item ignore-item" id="ignore-item-{{ r.id }}">
+      <div class="cat-item-display">
+        <span class="cat-name">{{ r.pattern }}</span>
+        <div class="cat-item-actions">
+          <button type="button" class="danger cat-delete-btn" onclick="deleteIgnore(this, {{ r.id }}, '{{ r.pattern | e }}')" title="{{ t('button.remove') }}">✕</button>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="cat-empty">{{ t('message.no_exclusions') }}</div>
+    {% endif %}
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+
+<script>
+let toastTimer = null;
+
+function showToast(message, kind) {
+  kind = kind || "info";
+  const toast = document.getElementById("toast");
+  toast.className = "toast";
+  toast.classList.add("toast--" + kind);
+  toast.innerText = message;
+  toast.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { toast.classList.remove("show"); }, 3000);
+}
+
+function createCat(e) {
+  e.preventDefault();
+  const input = document.getElementById("cat-name-input");
+  const name = input.value.trim();
+  if (!name) return;
+
+  const btn = e.target.querySelector("button[type=submit]");
+  btn.disabled = true;
+
+  fetch("/categories", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name: name }),
+  })
+    .then(function (r) {
+      if (!r.ok) return r.json().then(function (d) { throw new Error(d.detail || T("toast.error")); });
+      return r.json();
+    })
+    .then(function () {
+      showToast(T("toast.category_created"), "success");
+      location.reload();
+    })
+    .catch(function (err) {
+      showToast(err.message, "error");
+      btn.disabled = false;
+    });
+}
+
+function startCatEdit(id, currentName) {
+  document.getElementById("cat-display-" + id).hidden = true;
+  const form = document.getElementById("cat-edit-" + id);
+  form.hidden = false;
+  const input = document.getElementById("cat-edit-input-" + id);
+  input.value = currentName;
+  input.focus();
+  input.select();
+}
+
+function cancelCatEdit(id) {
+  document.getElementById("cat-display-" + id).hidden = false;
+  document.getElementById("cat-edit-" + id).hidden = true;
+}
+
+function saveCatEdit(e, id) {
+  e.preventDefault();
+  const input = document.getElementById("cat-edit-input-" + id);
+  const name = input.value.trim();
+  if (!name) return;
+
+  const buttons = Array.from(e.target.querySelectorAll("button"));
+  buttons.forEach(function (b) { b.disabled = true; });
+
+  fetch("/categories/" + id + "/rename", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name: name }),
+  })
+    .then(function (r) {
+      if (!r.ok) return r.json().then(function (d) { throw new Error(d.detail || T("toast.error")); });
+      return r.json();
+    })
+    .then(function () {
+      showToast(T("toast.category_renamed"), "success");
+      location.reload();
+    })
+    .catch(function (err) {
+      showToast(err.message, "error");
+      buttons.forEach(function (b) { b.disabled = false; });
+    });
+}
+
+function deleteCat(btn, id, name, count) {
+  if (btn.dataset.confirming !== "1") {
+    btn.dataset.confirming = "1";
+    btn.dataset.originalText = btn.innerText;
+    if (count > 0) {
+      btn.innerText = T("confirm.lose_assignment", { count: count });
+    } else {
+      btn.innerText = T("confirm.really_delete");
+    }
+    btn.classList.add("confirming-delete");
+    clearTimeout(btn._ct);
+    btn._ct = setTimeout(function () {
+      btn.dataset.confirming = "0";
+      btn.innerText = btn.dataset.originalText || "✕";
+      btn.classList.remove("confirming-delete");
+    }, 4000);
+    return;
+  }
+
+  btn.disabled = true;
+  clearTimeout(btn._ct);
+
+  fetch("/categories/" + id + "/delete", { method: "POST" })
+    .then(function () {
+      showToast(T("toast.category_deleted", { name: name }), "success");
+      location.reload();
+    })
+    .catch(function () {
+      showToast(T("toast.delete_error"), "error");
+      btn.disabled = false;
+    });
+}
+
+function createIgnore(e) {
+  e.preventDefault();
+  var input = document.getElementById("ignore-pattern-input");
+  var pattern = input.value.trim().toLowerCase();
+  if (!pattern) return;
+  var btn = e.target.querySelector("button[type=submit]");
+  btn.disabled = true;
+  fetch("/referer-ignore", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ pattern: pattern }),
+  })
+    .then(function (r) {
+      if (!r.ok) return r.json().then(function (d) { throw new Error(d.detail || T("toast.error")); });
+      return r.json();
+    })
+    .then(function () {
+      showToast(T("toast.pattern_added"), "success");
+      location.reload();
+    })
+    .catch(function (err) {
+      showToast(err.message, "error");
+      btn.disabled = false;
+    });
+}
+
+function deleteIgnore(btn, id, pattern) {
+  if (btn.dataset.confirming !== "1") {
+    btn.dataset.confirming = "1";
+    btn.dataset.originalText = btn.innerText;
+    btn.innerText = T("confirm.delete_pattern");
+    btn.classList.add("confirming-delete");
+    clearTimeout(btn._ct);
+    btn._ct = setTimeout(function () {
+      btn.dataset.confirming = "0";
+      btn.innerText = btn.dataset.originalText || "✕";
+      btn.classList.remove("confirming-delete");
+    }, 3500);
+    return;
+  }
+  btn.disabled = true;
+  clearTimeout(btn._ct);
+  fetch("/referer-ignore/" + id + "/delete", { method: "POST" })
+    .then(function () {
+      showToast(T("toast.pattern_removed", { pattern: pattern }), "success");
+      location.reload();
+    })
+    .catch(function () {
+      showToast(T("toast.remove_error"), "error");
+      btn.disabled = false;
+    });
+}
+</script>
+{% endblock %}

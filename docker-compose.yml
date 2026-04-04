@@ -1,0 +1,160 @@
+services:
+  postgres:
+    image: postgres:18
+    container_name: eyestream-postgres
+    environment:
+      POSTGRES_DB: "${DB_NAME:-eyestream}"
+      POSTGRES_USER: "${DB_USER:-eyestream}"
+      POSTGRES_PASSWORD: "${DB_PASSWORD:-eyestream}"
+      TZ: "${TZ:-Europe/Berlin}"
+    volumes:
+      - ./postgres:/var/lib/postgresql
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-eyestream} -d ${DB_NAME:-eyestream}"]
+      interval: 10s
+      retries: 5
+      start_period: 5s
+      timeout: 5s
+    depends_on:
+      public:
+        condition: service_healthy
+
+  valkey:
+    image: valkey/valkey:8-alpine
+    container_name: eyestream-valkey
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 10s
+      retries: 5
+      start_period: 5s
+      timeout: 3s
+    volumes:
+      - ./valkey-data:/data
+
+  app:
+    build:
+      context: ./app
+    container_name: eyestream-app
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      PORT: 80
+      TZ: "${TZ:-Europe/Berlin}"
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: "${DB_NAME:-eyestream}"
+      DB_USER: "${DB_USER:-eyestream}"
+      DB_PASSWORD: "${DB_PASSWORD:-eyestream}"
+      UPLOAD_DIR: /data/uploads
+      HLS_DIR: /data/hls
+      NPM_LOG_DIR: /data/npm-logs
+      NPM_SITE_ID: "${NPM_SITE_ID:-}"
+      BRAND_NAME: "${BRAND_NAME:-Eyestream}"
+      PRODUCT_NAME: "${PRODUCT_NAME:-Eyestream}"
+      PUBLIC_BASE: "${PUBLIC_BASE:-https://localhost}"
+      LOGO_URL: "${LOGO_URL:-}"
+      FOOTER_LINKS: "${FOOTER_LINKS:-}"
+      COPYRIGHT_TEXT: "${COPYRIGHT_TEXT:-}"
+      EXAMPLE_PAGE_URL: "${EXAMPLE_PAGE_URL:-}"
+      REFERER_IGNORE_SEEDS: "${REFERER_IGNORE_SEEDS:-localhost}"
+      AUTH_EMAIL_HEADER: X-Auth-Request-Email
+    volumes:
+      - ./data/uploads:/data/uploads
+      - ./data/hls:/data/hls
+      - ${NPM_LOG_HOST_PATH:-/dev/null}:/data/npm-logs:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1/health"]
+      interval: 30s
+      retries: 3
+      start_period: 10s
+      timeout: 5s
+    depends_on:
+      public:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+  worker:
+    build: ./worker
+    container_name: eyestream-worker
+    environment:
+      TZ: "${TZ:-Europe/Berlin}"
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: "${DB_NAME:-eyestream}"
+      DB_USER: "${DB_USER:-eyestream}"
+      DB_PASSWORD: "${DB_PASSWORD:-eyestream}"
+      UPLOAD_DIR: /data/uploads
+      HLS_DIR: /data/hls
+      PUBLIC_BASE: "${PUBLIC_BASE:-https://localhost}"
+      MAX_PARALLEL_JOBS: 1
+      LADDER_CFG: /config/ladder.yml
+    volumes:
+      - ./data/uploads:/data/uploads
+      - ./data/hls:/data/hls
+      - ./config:/config:ro
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+
+  public:
+    image: nginx:stable-alpine
+    container_name: eyestream-public
+    volumes:
+      - ./data/hls:/usr/share/nginx/html:ro
+      - ./nginx-public/favicon.ico:/etc/nginx/favicon.ico:ro
+      - ./nginx-public/404.html:/etc/nginx/errors/404.html:ro
+      - ./nginx-public/flame-play.svg:/etc/nginx/assets/flame-play.svg:ro
+      - ./nginx-public/embed.html:/etc/nginx/embed.html:ro
+      - ./nginx-public/default.conf:/etc/nginx/conf.d/default.conf:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1/healthz"]
+      interval: 30s
+      retries: 3
+      start_period: 10s
+      timeout: 5s
+    logging:
+      driver: "local"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - default
+      - shared-npm
+
+  oauth2-proxy:
+    image: quay.io/oauth2-proxy/oauth2-proxy:latest
+    container_name: eyestream-oauth2-proxy
+    env_file:
+      - ./oauth2-proxy.env
+    logging:
+      driver: "local"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    depends_on:
+      app:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "oauth2-proxy", "--version"]
+      interval: 30s
+      retries: 3
+      start_period: 10s
+      timeout: 5s
+    networks:
+      - default
+      - shared-npm
+
+networks:
+  shared-npm:
+    name: shared-npm
+    external: true

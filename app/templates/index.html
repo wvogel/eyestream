@@ -1,0 +1,377 @@
+{% extends "base.html" %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js" integrity="sha384-9v3HcdYrO3D+OPDTjZ40RXocgE4GtXVCd3/mCS62JsM93JXgI1afJVuwjFvsu6ni" crossorigin="anonymous"></script>
+{% endblock %}
+
+{% block content %}
+<div class="page-title-bar">
+  <h1 class="page-title">{{ t('page.videos') }}</h1>
+  <form class="video-search" method="get" action="/">
+    <div class="search-input-wrap">
+      <input
+        id="video-search-input"
+        name="q"
+        type="search"
+        class="video-search-input"
+        value="{{ q }}"
+        placeholder="{{ t('search.placeholder') }}"
+        aria-label="{{ t('search.aria') }}"
+        autocomplete="off">
+      <div class="search-suggest-panel" id="search-suggest" hidden></div>
+    </div>
+    <input type="hidden" name="cat" id="cat-filter-value" value="{{ cat or 0 }}">
+    <div class="custom-select custom-select--filter" id="cat-filter" data-value="{{ cat or 0 }}">
+      <div class="custom-select-trigger">{% if cat %}{% for d in categories %}{% if d.id == cat %}{{ d.name }}{% endif %}{% endfor %}{% else %}{{ t('filter.all_categories') }}{% endif %} <svg class="custom-select-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
+      <div class="custom-select-options">
+        <div class="custom-select-option{% if not cat %} is-selected{% endif %}" data-value="0">{{ t('filter.all_categories') }}</div>
+        {% for d in categories %}
+        <div class="custom-select-option{% if cat == d.id %} is-selected{% endif %}" data-value="{{ d.id }}">{{ d.name }}</div>
+        {% endfor %}
+      </div>
+    </div>
+    <button type="submit" class="secondary">{{ t('button.search') }}</button>
+  </form>
+  <a class="button page-upload-btn" href="/upload">{{ t('button.upload') }}</a>
+</div>
+
+{% macro pagelink(p) %}/?page={{ p }}{% if q_url %}&q={{ q_url }}{% endif %}{% if cat %}&cat={{ cat }}{% endif %}{% if per_page is not none and per_page != 10 %}&per_page={{ per_page }}{% endif %}{% endmacro %}
+
+{% set pagesize_html %}
+<div class="pagination-size">
+  <span class="pagination-size-label">{{ t('pagination.per_page') }}</span>
+  <div class="custom-select custom-select--filter custom-select--pagesize pagesize-select" data-value="{{ per_page }}">
+    <div class="custom-select-trigger">{{ t('pagination.all') if per_page == 0 else per_page }} <svg class="custom-select-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
+    <div class="custom-select-options">
+      {% for s in per_page_options %}
+      <div class="custom-select-option{% if s == per_page %} is-selected{% endif %}" data-value="{{ s }}">{{ t('pagination.all') if s == 0 else s }}</div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endset %}
+
+{% if pages > 1 or per_page != 10 %}
+<div class="pagination">
+  <span class="pagination-line pagination-line-balance"></span>
+  <div class="pagination-left">
+    <span class="pagination-line"></span>
+    {% if page > 1 %}<a href="{{ pagelink(page - 1) }}" class="secondary">{{ t('button.previous') }}</a>{% endif %}
+  </div>
+  <span class="pagination-info">{{ t('pagination.info', page=page, pages=pages) }}</span>
+  <div class="pagination-right">
+    {% if page < pages %}<a href="{{ pagelink(page + 1) }}" class="secondary">{{ t('button.next') }}</a>{% endif %}
+    <span class="pagination-line"></span>
+  </div>
+  {{ pagesize_html }}
+</div>
+{% endif %}
+
+{% if videos %}
+{% for v in videos %}
+<div class="card video-card{% if v.disabled %} is-disabled{% endif %}" data-id="{{ v.id }}">
+
+  <div class="video-grid">
+
+    <!-- Poster -->
+    <div class="video-preview">
+      {% if v.disabled %}
+        {% set effective_poster = "/video/" ~ v.id ~ "/file/poster.jpg" %}
+        {% set effective_playlist = "/video/" ~ v.id ~ "/file/master.m3u8" %}
+      {% else %}
+        {% set effective_poster = v.poster_url %}
+        {% set effective_playlist = v.playlist_url %}
+      {% endif %}
+      <div class="video-poster{% if v.playlist_url %} is-playable{% endif %}"
+           id="video-poster-{{ v.id }}"
+           {% if v.playlist_url %}
+           data-id="{{ v.id }}"
+           data-src="{{ effective_playlist }}"
+           data-poster="{{ effective_poster }}"
+           onclick="loadPlayer(this)"
+           {% endif %}>
+        {% if v.poster_url %}
+        <img src="{{ effective_poster }}" alt="{{ t('video.poster_alt') }}" loading="lazy">
+        {% else %}
+        <div class="video-poster-placeholder" id="video-poster-placeholder-{{ v.id }}">{{ t('video.poster_creating') }}</div>
+        {% endif %}
+        {% if v.status in ["queued", "encoding"] %}
+        <div class="video-encoding-overlay">{% if v.status == "queued" %}{{ t('video.status_queued') }}{% else %}{{ t('video.status_encoding') }}{% endif %}</div>
+        {% endif %}
+        {% if v.status == "ready" %}
+        <div class="video-ready-badge">{{ t('video.status_ready') }}</div>
+        {% endif %}
+        {% if v.disabled %}
+        <div class="video-disabled-overlay">{{ t('video.status_disabled') }}</div>
+        {% endif %}
+        {% if v.duration_mmss %}
+        <span class="video-duration-badge">{{ v.duration_mmss }}</span>
+        {% endif %}
+        {% if v.playlist_url %}
+        <div class="play-overlay">▶</div>
+        {% endif %}
+      </div>
+      <div class="video-badges-row">
+        <span class="video-views-badge" id="views-{{ v.id }}" title="{{ t('video.views_title') }}" hidden></span>
+        <span class="video-referer-badge" id="referer-badge-{{ v.id }}" hidden></span>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div class="video-content">
+
+      <!-- Header -->
+      <div class="video-header">
+        <div class="video-title-row" id="video-title-row-{{ v.id }}">
+          <h3 id="video-title-display-{{ v.id }}">{{ v.orig_name_highlighted | safe }}</h3>
+          <button
+            type="button"
+            class="secondary title-edit-btn"
+            title="{{ t('button.edit_title') }}"
+            aria-label="{{ t('button.edit_title') }}"
+            onclick="startTitleEdit({{ v.id }})">✎</button>
+        </div>
+        <form
+          class="video-title-edit"
+          id="video-title-edit-{{ v.id }}"
+          onsubmit="saveTitleEdit(event, {{ v.id }})"
+          hidden>
+          <input
+            id="video-title-input-{{ v.id }}"
+            type="text"
+            maxlength="255"
+            value="{{ v.orig_name }}"
+            aria-label="{{ t('button.edit_title') }}">
+          <button type="submit" class="secondary">{{ t('button.save') }}</button>
+          <button type="button" class="secondary" onclick="cancelTitleEdit({{ v.id }})">{{ t('button.cancel') }}</button>
+        </form>
+
+        <div class="video-meta-with-cat">
+          <div class="video-meta-lines">
+            <div class="video-meta video-meta-main">
+              {{ v.owner_email }}
+              {% if v.encoded_local %}
+                · {{ v.encoded_local }}
+              {% endif %}
+              {% if v.encoding_duration %}
+                · Encoding {{ v.encoding_duration }}
+              {% endif %}
+            </div>
+
+            {% if v.duration_mmss %}
+            <div class="video-tech video-meta-sub">
+              {{ v.duration_mmss }}
+              {% for s in v.streams %}
+                {% if s.codec_type == "video" %}
+                  · {{ s.codec_name }}
+                  · {{ s.width }}×{{ s.height }}
+                  {% if s.r_frame_rate and "/" in s.r_frame_rate %}
+                    {% set fr = s.r_frame_rate.split("/") %}
+                    · {{ "%.0f"|format((fr[0]|int)/(fr[1]|int)) }} fps
+                  {% endif %}
+                {% elif s.codec_type == "audio" %}
+                  · {{ s.codec_name }}
+                  · {{ s.channels }}ch
+                {% endif %}
+              {% endfor %}
+            </div>
+            {% endif %}
+          </div>
+
+          <div class="custom-select custom-select--flame" id="cat-select-{{ v.id }}" data-value="{{ v.category_id or '' }}" data-vid="{{ v.id }}">
+            <div class="custom-select-trigger">{{ v.category_name or t('video.no_category') }} <svg class="custom-select-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
+            <div class="custom-select-options">
+              <div class="custom-select-option{% if not v.category_id %} is-selected{% endif %}" data-value="">{{ t('video.no_category') }}</div>
+              {% for d in categories %}
+              <div class="custom-select-option{% if v.category_id == d.id %} is-selected{% endif %}" data-value="{{ d.id }}">{{ d.name }}</div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Status -->
+      <div class="video-status-block">
+        {% if v.status in ["queued", "encoding"] %}
+          <div class="status-line encoding-dot"
+               id="encode-status-{{ v.id }}">
+            {% if v.status == "queued" %}
+              ● {{ t('video.status_waiting_full') }}
+            {% else %}
+              ● {{ t('video.status_encoding') }} {{ v.progress }}%
+            {% endif %}
+            {% if v.status == "encoding" and v.eta_seconds %}
+              · ETA {{ v.eta_seconds // 60 }}:{{ "%02d"|format(v.eta_seconds % 60) }}
+            {% endif %}
+          </div>
+
+          <div class="progress">
+            <div class="progress-bar flame-progress{% if v.status == 'encoding' %} is-animating{% endif %}"
+                 id="encode-progress-{{ v.id }}"
+                 style="width: {{ v.progress }}%"></div>
+          </div>
+
+        {% endif %}
+      </div>
+
+      <!-- Renditions -->
+      {% if v.renditions %}
+      <div class="renditions-line">
+        {% for r in v.renditions %}
+          {% set mbit = (r.bandwidth|int / 1000000) %}
+          <span class="pill">
+            {{ r.resolution.split("x")[1] }}p · {{ "%.2f"|format(mbit) }} Mbit/s
+          </span>
+        {% endfor %}
+        <span class="pill pill-help" onclick="openHlsHelp()" title="Was ist HLS?"><svg class="help-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></span>
+      </div>
+      {% endif %}
+
+      <!-- Streaming Link -->
+      {% if v.playlist_url %}
+      <div class="inline-action-row">
+        <div class="playlist-inline">
+          <span class="playlist-url">{{ v.playlist_url }}</span>
+        </div>
+        <button class="secondary inline-action-btn"
+                onclick="copyToClipboard('{{ v.playlist_url }}', T('toast.url_copied'))">
+          {{ t('button.copy_url') }}
+        </button>
+        <button class="secondary inline-action-btn"
+                onclick="copyToClipboard('{{ public_base }}/embed/{{ v.id }}', T('toast.player_url_copied'))">
+          {{ t('button.copy_player_url') }}
+        </button>
+        <button class="secondary inline-action-btn url-help-btn"
+                onclick="openUrlHelp()"
+                title="{{ t('button.url_help') }}"><svg class="help-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></button>
+      </div>
+      {% endif %}
+
+      <div class="video-note-block">
+        <label class="video-note-label">{{ t('label.note') }}</label>
+        <div class="inline-action-row note-action-row">
+          <div
+            class="video-note-input"
+            id="video-note-input-{{ v.id }}"
+            contenteditable="true"
+            role="textbox"
+            data-placeholder="{{ t('placeholder.note') }}"
+            data-raw="{{ v.note or '' | e }}">{% if q and v.note_has_hit %}{{ v.note_highlighted | safe }}{% else %}{{ v.note or '' | e }}{% endif %}</div>
+          <button class="secondary inline-action-btn" onclick="saveNote(this, {{ v.id }})">{{ t('button.save') }}</button>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="video-actions">
+        {% if v.status in ["queued", "encoding"] %}
+          <button class="secondary"
+                  onclick="cancelEncode(this, {{ v.id }})">
+            {{ t('button.cancel') }}
+          </button>
+        {% endif %}
+
+        {% if v.status in ["ready","failed","cancelled"] %}
+          <button class="secondary"
+                  onclick="reencode({{ v.id }}, this)">
+            {{ t('button.reencode') }}
+          </button>
+          <button class="secondary{% if v.disabled %} is-disabled-toggle{% endif %}"
+                  onclick="toggleDisabled({{ v.id }}, this)">
+            {{ t('button.activate') if v.disabled else t('button.deactivate') }}
+          </button>
+        {% endif %}
+
+        <button class="danger"
+                onclick="delVid(this, {{ v.id }})">
+          {{ t('button.delete') }}
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endfor %}
+{% else %}
+<div class="card video-card">
+  {% if q %}
+  <h3>{{ t('message.no_search_results', q=q) }}</h3>
+  <div class=”video-meta video-meta-main”>{{ t('message.try_different_search') }}</div>
+  <div class=”video-actions empty-actions”>
+    <a class=”button” href=”/”>{{ t('button.reset_search') }}</a>
+  </div>
+  {% else %}
+  <h3>{{ t('message.no_videos') }}</h3>
+  <div class=”video-meta video-meta-main”>{{ t('message.upload_to_start') }}</div>
+  <div class=”video-actions empty-actions”>
+    <a class=”button” href=”/upload”>{{ t('button.upload') }}</a>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+{% if pages > 1 or per_page != 10 %}
+<div class="pagination pagination-bottom">
+  <span class="pagination-line pagination-line-balance"></span>
+  <div class="pagination-left">
+    <span class="pagination-line"></span>
+    {% if page > 1 %}<a href="{{ pagelink(page - 1) }}" class="secondary">{{ t('button.previous') }}</a>{% endif %}
+  </div>
+  <span class="pagination-info">{{ t('pagination.info', page=page, pages=pages) }}</span>
+  <div class="pagination-right">
+    {% if page < pages %}<a href="{{ pagelink(page + 1) }}" class="secondary">{{ t('button.next') }}</a>{% endif %}
+    <span class="pagination-line"></span>
+  </div>
+  {{ pagesize_html }}
+</div>
+{% endif %}
+
+<!-- HLS Help Modal -->
+<div class="url-help-backdrop" id="hls-help-backdrop" hidden onclick="closeHlsHelp()">
+  <div class="url-help-modal" onclick="event.stopPropagation()">
+    <div class="url-help-flame-burst" id="hls-help-flame"></div>
+    <button class="url-help-close" onclick="closeHlsHelp()" aria-label="{{ t('button.close') }}">✕</button>
+    <h3 class="url-help-title">{{ t('modal.hls_title') }}</h3>
+    <div class="url-help-body">
+      <p>{{ t('modal.hls_text_1') }}</p>
+      <p><strong>{{ t('modal.hls_label_bitrate') }}</strong> — {{ t('modal.hls_text_2') }}</p>
+      <p><strong>{{ t('modal.hls_label_pills') }}</strong> {{ t('modal.hls_text_3') }}</p>
+    </div>
+  </div>
+</div>
+
+<!-- URL Help Modal -->
+<div class="url-help-backdrop" id="url-help-backdrop" hidden onclick="closeUrlHelp()">
+  <div class="url-help-modal" onclick="event.stopPropagation()">
+    <div class="url-help-flame-burst" id="url-help-flame"></div>
+    <button class="url-help-close" onclick="closeUrlHelp()" aria-label="{{ t('button.close') }}">✕</button>
+    <h3 class="url-help-title">{{ t('modal.url_title') }}</h3>
+    <div class="url-help-body">
+      <div class="url-help-rows">
+        <div class="url-help-btn-demo">
+          <span class="url-help-fake-btn">{{ t('button.copy_url') }}</span>
+          <span class="url-help-arrow">⟵</span>
+        </div>
+        <p>{{ t('modal.url_text_website') | safe }}{% if example_page_url %} {{ t('modal.url_text_example') }} <a href="{{ example_page_url }}" target="_blank" rel="noopener noreferrer">{{ t('header.example_link_text') }}</a> ({{ t('modal.url_text_header_link') }}){% endif %}</p>
+        <div class="url-help-btn-demo">
+          <span class="url-help-fake-btn">{{ t('button.copy_player_url') }}</span>
+          <span class="url-help-arrow">⟵</span>
+        </div>
+        <p>{{ t('modal.url_text_wiki') | safe }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="toast"></div>
+
+<script>
+var PAGE_DATA = {
+  encodingIds: [{% for v in videos %}{% if v.status in ["queued","encoding"] %}{{ v.id }},{% endif %}{% endfor %}],
+  pageSizeUrlSuffix: "{% if q_url %}&q={{ q_url }}{% endif %}{% if cat %}&cat={{ cat }}{% endif %}"
+};
+</script>
+<script src="/static/app.js?v={{ app_version }}"></script>
+
+{% endblock %}
