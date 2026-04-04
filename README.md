@@ -2,6 +2,12 @@
 
 Self-hosted video platform with HLS adaptive streaming, admin UI, and embed player. Upload videos, encode them automatically into multiple quality levels, and deliver them via static Nginx — no app server in the streaming path.
 
+![Eyestream Admin UI](docs/screenshot-overview.png)
+
+## Architecture
+
+![Architecture](docs/architecture-en.svg)
+
 ## Requirements
 
 - Docker and Docker Compose (v2+)
@@ -39,27 +45,6 @@ docker network create shared-npm
 ```
 
 Adjust the network name in `docker-compose.yml` if you use a different one.
-
-## Architecture
-
-```
-                    ┌──────────────┐
-  Admin ──HTTPS──▸  │ OAuth2-Proxy │ ──▸ App (FastAPI)  ──▸ PostgreSQL
-                    └──────────────┘         │                   ▲
-                                            ▼                   │
-                                      /data/uploads        Worker (ffmpeg)
-                                      /data/hls ◂──────────────┘
-                                            │
-  Website/Wiki ──HTTPS──▸ Public Nginx ─────┘
-                          (HLS, Embed, oEmbed)
-```
-
-- **App**: FastAPI admin UI — upload, manage, search, statistics, activity log
-- **Worker**: Async ffmpeg encoding pipeline, preview thumbnails, heartbeat monitoring
-- **Public Nginx**: Static HLS delivery, embed player, oEmbed endpoint (no auth)
-- **OAuth2-Proxy**: OIDC/OAuth2 authentication (Entra ID, Authentik, Keycloak, etc.)
-- **PostgreSQL**: Metadata, status, configuration
-- **Valkey**: Session store for OAuth2-Proxy (Redis-compatible)
 
 ## Features
 
