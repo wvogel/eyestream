@@ -293,15 +293,13 @@
 </div>
 {% endfor %}
 {% else %}
-<div class=”card empty-state”>
+<div class=”empty-state”>
   {% if q %}
   <h3>{{ t('message.no_search_results', q=q) }}</h3>
   <p>{{ t('message.try_different_search') }}</p>
-  <a class=”button” href=”/”>{{ t('button.reset_search') }}</a>
   {% else %}
   <h3>{{ t('message.no_videos') }}</h3>
   <p>{{ t('message.upload_to_start') }}</p>
-  <a class=”button” href=”/upload”>{{ t('button.upload') }}</a>
   {% endif %}
 </div>
 {% endif %}

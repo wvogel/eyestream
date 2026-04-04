@@ -1400,18 +1400,19 @@ html[data-theme="dark"] .activity-action--cat { color: #5ba5ff; }
 ================================================= */
 .empty-state {
   text-align: center;
-  padding: 3rem 2rem;
+  padding: 4rem 2rem;
+  opacity: .45;
 }
 
 .empty-state h3 {
-  margin: 0 0 .5rem 0;
-  font-size: 1.15rem;
+  margin: 0 0 .4rem 0;
+  font-size: 1rem;
+  font-weight: 600;
 }
 
 .empty-state p {
-  margin: 0 0 1.2rem 0;
-  opacity: .6;
-  font-size: .9rem;
+  margin: 0;
+  font-size: .85rem;
 }
 
 /* =================================================
