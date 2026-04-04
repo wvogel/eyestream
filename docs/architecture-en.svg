@@ -1,47 +1,56 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 520" font-family="Inter, system-ui, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 520" font-family="system-ui, -apple-system, sans-serif">
   <defs>
     <linearGradient id="flame" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0%" stop-color="#ff5e1f"/>
       <stop offset="100%" stop-color="#ff9a22"/>
     </linearGradient>
     <linearGradient id="blue" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#1a2250"/>
-      <stop offset="100%" stop-color="#141450"/>
+      <stop offset="0%" stop-color="#1e2860"/>
+      <stop offset="100%" stop-color="#171c50"/>
     </linearGradient>
     <linearGradient id="green" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#1a7a42"/>
       <stop offset="100%" stop-color="#145a32"/>
     </linearGradient>
     <filter id="shadow">
-      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-opacity="0.15"/>
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#000" flood-opacity="0.35"/>
     </filter>
+    <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#8899bb"/>
+    </marker>
+    <marker id="arrowhead-flame" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#ff9a22"/>
+    </marker>
+    <marker id="arrowhead-green" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2ecc71"/>
+    </marker>
   </defs>
 
   <!-- Background -->
-  <rect width="900" height="520" rx="12" fill="#f6f8fb"/>
+  <rect width="900" height="520" rx="12" fill="#0d1220"/>
 
   <!-- Title -->
-  <text x="450" y="36" text-anchor="middle" font-size="16" font-weight="700" fill="#141450">Eyestream — Architecture</text>
+  <text x="450" y="36" text-anchor="middle" font-size="16" font-weight="700" fill="#e0e6f0">Eyestream — Architecture</text>
 
-  <!-- User -->
+  <!-- User: Admin -->
   <g transform="translate(60, 80)">
-    <circle cx="30" cy="18" r="14" fill="none" stroke="#687395" stroke-width="1.5"/>
-    <line x1="30" y1="32" x2="30" y2="52" stroke="#687395" stroke-width="1.5"/>
-    <line x1="14" y1="40" x2="46" y2="40" stroke="#687395" stroke-width="1.5"/>
-    <line x1="30" y1="52" x2="18" y2="68" stroke="#687395" stroke-width="1.5"/>
-    <line x1="30" y1="52" x2="42" y2="68" stroke="#687395" stroke-width="1.5"/>
-    <text x="30" y="84" text-anchor="middle" font-size="11" fill="#687395">Admin</text>
+    <circle cx="30" cy="18" r="14" fill="none" stroke="#8899bb" stroke-width="1.5"/>
+    <line x1="30" y1="32" x2="30" y2="52" stroke="#8899bb" stroke-width="1.5"/>
+    <line x1="14" y1="40" x2="46" y2="40" stroke="#8899bb" stroke-width="1.5"/>
+    <line x1="30" y1="52" x2="18" y2="68" stroke="#8899bb" stroke-width="1.5"/>
+    <line x1="30" y1="52" x2="42" y2="68" stroke="#8899bb" stroke-width="1.5"/>
+    <text x="30" y="84" text-anchor="middle" font-size="11" fill="#8899bb">Admin</text>
   </g>
 
-  <!-- Website visitor -->
+  <!-- User: Website visitor -->
   <g transform="translate(60, 340)">
-    <circle cx="30" cy="18" r="14" fill="none" stroke="#687395" stroke-width="1.5"/>
-    <line x1="30" y1="32" x2="30" y2="52" stroke="#687395" stroke-width="1.5"/>
-    <line x1="14" y1="40" x2="46" y2="40" stroke="#687395" stroke-width="1.5"/>
-    <line x1="30" y1="52" x2="18" y2="68" stroke="#687395" stroke-width="1.5"/>
-    <line x1="30" y1="52" x2="42" y2="68" stroke="#687395" stroke-width="1.5"/>
-    <text x="30" y="84" text-anchor="middle" font-size="11" fill="#687395">Website /</text>
-    <text x="30" y="96" text-anchor="middle" font-size="11" fill="#687395">Wiki</text>
+    <circle cx="30" cy="18" r="14" fill="none" stroke="#8899bb" stroke-width="1.5"/>
+    <line x1="30" y1="32" x2="30" y2="52" stroke="#8899bb" stroke-width="1.5"/>
+    <line x1="14" y1="40" x2="46" y2="40" stroke="#8899bb" stroke-width="1.5"/>
+    <line x1="30" y1="52" x2="18" y2="68" stroke="#8899bb" stroke-width="1.5"/>
+    <line x1="30" y1="52" x2="42" y2="68" stroke="#8899bb" stroke-width="1.5"/>
+    <text x="30" y="84" text-anchor="middle" font-size="11" fill="#8899bb">Website /</text>
+    <text x="30" y="96" text-anchor="middle" font-size="11" fill="#8899bb">Wiki</text>
   </g>
 
   <!-- OAuth2-Proxy -->
@@ -92,77 +101,55 @@
     <text x="430" y="436" text-anchor="middle" font-size="9" fill="#a0d8b0">Poster + Preview Thumbnails</text>
   </g>
 
-  <!-- Shared Volume -->
+  <!-- Shared Volume: hls -->
   <g filter="url(#shadow)">
-    <rect x="580" y="370" width="120" height="50" rx="8" fill="#eef3ff" stroke="#c0c8e0" stroke-width="1"/>
-    <text x="640" y="393" text-anchor="middle" font-size="10" font-weight="600" fill="#3a3a7a">/data/hls</text>
-    <text x="640" y="408" text-anchor="middle" font-size="8" fill="#687395">Shared Volume</text>
+    <rect x="580" y="370" width="120" height="50" rx="8" fill="#141a2e" stroke="#2a3558" stroke-width="1"/>
+    <text x="640" y="393" text-anchor="middle" font-size="10" font-weight="600" fill="#a0aac0">/data/hls</text>
+    <text x="640" y="408" text-anchor="middle" font-size="8" fill="#607090">Shared Volume</text>
   </g>
 
+  <!-- Shared Volume: uploads -->
   <g filter="url(#shadow)">
-    <rect x="720" y="370" width="120" height="50" rx="8" fill="#eef3ff" stroke="#c0c8e0" stroke-width="1"/>
-    <text x="780" y="393" text-anchor="middle" font-size="10" font-weight="600" fill="#3a3a7a">/data/uploads</text>
-    <text x="780" y="408" text-anchor="middle" font-size="8" fill="#687395">Shared Volume</text>
+    <rect x="720" y="370" width="120" height="50" rx="8" fill="#141a2e" stroke="#2a3558" stroke-width="1"/>
+    <text x="780" y="393" text-anchor="middle" font-size="10" font-weight="600" fill="#a0aac0">/data/uploads</text>
+    <text x="780" y="408" text-anchor="middle" font-size="8" fill="#607090">Shared Volume</text>
   </g>
 
   <!-- NPM Logs -->
   <g filter="url(#shadow)">
-    <rect x="400" y="470" width="140" height="36" rx="8" fill="#eef3ff" stroke="#c0c8e0" stroke-width="1"/>
-    <text x="470" y="492" text-anchor="middle" font-size="9" font-weight="600" fill="#3a3a7a">NPM Logs (ro)</text>
+    <rect x="400" y="470" width="140" height="36" rx="8" fill="#141a2e" stroke="#2a3558" stroke-width="1"/>
+    <text x="470" y="492" text-anchor="middle" font-size="9" font-weight="600" fill="#a0aac0">NPM Logs (ro)</text>
   </g>
 
   <!-- Arrows -->
-  <!-- Admin -> OAuth2-Proxy -->
-  <line x1="110" y1="115" x2="178" y2="115" stroke="#687395" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-  <text x="145" y="108" text-anchor="middle" font-size="8" fill="#687395">HTTPS</text>
+  <line x1="110" y1="115" x2="178" y2="115" stroke="#8899bb" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+  <text x="145" y="108" text-anchor="middle" font-size="8" fill="#8899bb">HTTPS</text>
 
-  <!-- OAuth2-Proxy -> App -->
-  <line x1="340" y1="115" x2="398" y2="115" stroke="#687395" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-  <text x="370" y="108" text-anchor="middle" font-size="8" fill="#687395">Auth</text>
+  <line x1="340" y1="115" x2="398" y2="115" stroke="#8899bb" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+  <text x="370" y="108" text-anchor="middle" font-size="8" fill="#8899bb">Auth</text>
 
-  <!-- App -> PostgreSQL -->
-  <line x1="600" y1="115" x2="678" y2="115" stroke="#687395" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-  <text x="640" y="108" text-anchor="middle" font-size="8" fill="#687395">SQL</text>
+  <line x1="600" y1="115" x2="678" y2="115" stroke="#8899bb" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+  <text x="640" y="108" text-anchor="middle" font-size="8" fill="#8899bb">SQL</text>
 
-  <!-- Worker -> PostgreSQL -->
-  <line x1="760" y1="220" x2="760" y2="152" stroke="#687395" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-  <text x="772" y="190" font-size="8" fill="#687395">SQL</text>
+  <line x1="760" y1="220" x2="760" y2="152" stroke="#8899bb" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+  <text x="772" y="190" font-size="8" fill="#8899bb">SQL</text>
 
-  <!-- App -> Shared Volume -->
   <line x1="520" y1="170" x2="520" y2="230" stroke="#ff9a22" stroke-width="1.5" stroke-dasharray="4,3"/>
   <line x1="520" y1="230" x2="640" y2="368" stroke="#ff9a22" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrowhead-flame)"/>
-  <text x="555" y="285" font-size="8" fill="#b85c10">Poster, HLS</text>
+  <text x="555" y="285" font-size="8" fill="#ff9a22">Poster, HLS</text>
 
-  <!-- Worker -> Shared Volume hls -->
   <line x1="720" y1="310" x2="660" y2="368" stroke="#ff9a22" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrowhead-flame)"/>
-  <text x="705" y="345" font-size="8" fill="#b85c10">Encode</text>
+  <text x="705" y="345" font-size="8" fill="#ff9a22">Encode</text>
 
-  <!-- Worker -> Shared Volume uploads -->
-  <line x1="780" y1="310" x2="780" y2="368" stroke="#687395" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-  <text x="795" y="345" font-size="8" fill="#687395">Read</text>
+  <line x1="780" y1="310" x2="780" y2="368" stroke="#8899bb" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+  <text x="795" y="345" font-size="8" fill="#8899bb">Read</text>
 
-  <!-- Public Nginx -> Shared Volume -->
-  <line x1="540" y1="395" x2="578" y2="395" stroke="#1a7a42" stroke-width="1.5" marker-end="url(#arrowhead-green)"/>
-  <text x="558" y="388" font-size="8" fill="#1a7a42">Serve</text>
+  <line x1="540" y1="395" x2="578" y2="395" stroke="#2ecc71" stroke-width="1.5" marker-end="url(#arrowhead-green)"/>
+  <text x="558" y="388" font-size="8" fill="#2ecc71">Serve</text>
 
-  <!-- Website -> Public Nginx -->
-  <line x1="110" y1="395" x2="318" y2="395" stroke="#1a7a42" stroke-width="1.5" marker-end="url(#arrowhead-green)"/>
-  <text x="215" y="388" text-anchor="middle" font-size="8" fill="#1a7a42">HLS / Embed / oEmbed</text>
+  <line x1="110" y1="395" x2="318" y2="395" stroke="#2ecc71" stroke-width="1.5" marker-end="url(#arrowhead-green)"/>
+  <text x="215" y="388" text-anchor="middle" font-size="8" fill="#2ecc71">HLS / Embed / oEmbed</text>
 
-  <!-- App -> NPM Logs -->
-  <line x1="470" y1="170" x2="470" y2="468" stroke="#687395" stroke-width="1" stroke-dasharray="3,3" marker-end="url(#arrowhead)"/>
-  <text x="458" y="460" font-size="8" fill="#687395" text-anchor="end">Referer Analysis</text>
-
-  <!-- Arrowheads -->
-  <defs>
-    <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#687395"/>
-    </marker>
-    <marker id="arrowhead-flame" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#ff9a22"/>
-    </marker>
-    <marker id="arrowhead-green" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#1a7a42"/>
-    </marker>
-  </defs>
+  <line x1="470" y1="170" x2="470" y2="468" stroke="#8899bb" stroke-width="1" stroke-dasharray="3,3" marker-end="url(#arrowhead)"/>
+  <text x="458" y="460" font-size="8" fill="#8899bb" text-anchor="end">Referer Analysis</text>
 </svg>
