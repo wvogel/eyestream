@@ -36,7 +36,7 @@ The stack joins an external Docker network (`shared-npm` by default) where your 
 
 | Proxy | Log-based referer analysis |
 |-------|---------------------------|
-| **Nginx Proxy Manager** | Yes — mount NPM's log directory and set `NPM_SITE_ID` |
+| [**Nginx Proxy Manager**](https://github.com/NginxProxyManager/nginx-proxy-manager) | Yes — mount NPM's log directory and set `NPM_SITE_ID` |
 | **Traefik**, **Caddy**, **nginx**, etc. | Proxy works, but view counts and referer tracking on the stats page will not be available (these rely on NPM's access log format) |
 
 ```bash
@@ -128,7 +128,7 @@ View counts and referer tracking require Nginx Proxy Manager access logs. Withou
 
 ### Authentication
 
-Authentication is handled by OAuth2-Proxy. Copy `oauth2-proxy.env.example` to `oauth2-proxy.env` and configure your OIDC provider (Entra ID, Authentik, Keycloak, Google, etc.).
+Authentication is handled by [OAuth2-Proxy](https://github.com/oauth2-proxy/oauth2-proxy). Copy `oauth2-proxy.env.example` to `oauth2-proxy.env` and configure your OIDC provider (Entra ID, Authentik, Keycloak, Google, etc.).
 
 ## File Structure
 
