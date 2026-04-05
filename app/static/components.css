@@ -1176,16 +1176,15 @@ html[data-theme="dark"] .url-help-fake-btn {
    Video Search
 ================================================= */
 .video-search {
-  width: 100%;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 1rem;
+  justify-self: end;
+  display: flex;
   align-items: center;
+  gap: .5rem;
 }
 
 .search-input-wrap {
   position: relative;
-  min-width: 0;
+  width: 220px;
 }
 
 .search-suggest-panel {
@@ -1535,17 +1534,16 @@ html[data-theme="dark"] .video-preview {
   min-width: 0;
 }
 
-/* Update search grid to accommodate the category filter */
-.video-search {
-  grid-template-columns: minmax(120px, 1fr) minmax(0, auto) auto;
-}
-
 /* =================================================
    Component responsive
 ================================================= */
 @media (max-width: 720px) {
   .video-search {
-    grid-template-columns: 1fr;
+    flex-wrap: wrap;
+  }
+
+  .search-input-wrap {
+    width: 100%;
   }
 
   .video-grid {
