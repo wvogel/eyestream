@@ -114,16 +114,15 @@ h3 {
 }
 
 .page-title-bar {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
+  display: flex;
   align-items: center;
-  column-gap: 1rem;
-  row-gap: .55rem;
-  margin-bottom: 1.2rem;
+  gap: .75rem;
+  margin-bottom: .75rem;
 }
 
 .page-title {
   margin: 0 !important;
+  min-width: calc(1.14rem + 252px);
 }
 
 .page-upload-btn {

@@ -1176,15 +1176,17 @@ html[data-theme="dark"] .url-help-fake-btn {
    Video Search
 ================================================= */
 .video-search {
-  justify-self: end;
+  flex: 1;
   display: flex;
   align-items: center;
-  gap: .5rem;
+  justify-content: flex-end;
+  gap: .75rem;
 }
 
 .search-input-wrap {
   position: relative;
-  width: 400px;
+  flex: 1;
+  min-width: 120px;
 }
 
 .search-suggest-panel {
