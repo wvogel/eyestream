@@ -98,6 +98,12 @@ services:
       - ./data/hls:/data/hls
       - ./config:/config:ro
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "find /tmp/.worker_alive -mmin -1 | grep -q ."]
+      interval: 15s
+      retries: 3
+      start_period: 15s
+      timeout: 3s
     depends_on:
       app:
         condition: service_healthy

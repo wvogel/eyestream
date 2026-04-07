@@ -28,6 +28,11 @@ PUBLIC_BASE = os.getenv("PUBLIC_BASE", "https://localhost")
 
 MAX_PARALLEL_JOBS = int(os.getenv("MAX_PARALLEL_JOBS", "1"))
 PROGRESS_POLL_SECONDS = 2
+HEALTHCHECK_FILE = "/tmp/.worker_alive"
+
+
+def touch_healthcheck():
+    Path(HEALTHCHECK_FILE).touch()
 
 
 # ---------------------------------------------------------------------
@@ -505,6 +510,7 @@ def encode(job_id: int, src: str, tmp_dir: str, cfg: dict, pool: ConnectionPool)
                             "UPDATE worker_heartbeat SET last_seen=now(), status='encoding', cpu_percent=%s WHERE id=1",
                             (cpu,),
                         )
+                        touch_healthcheck()
 
             time.sleep(PROGRESS_POLL_SECONDS)
 
@@ -566,6 +572,7 @@ def main():
 
         with pool.connection() as c:
             c.execute("UPDATE worker_heartbeat SET last_seen=now(), status='polling', cpu_percent=%s WHERE id=1", (int(psutil.cpu_percent(interval=None)),))
+            touch_healthcheck()
             running = c.execute(
                 "SELECT COUNT(*) AS total FROM videos WHERE status='encoding'"
             ).fetchone()["total"]
@@ -624,6 +631,7 @@ def main():
                         continue
                     with pool.connection() as c:
                         c.execute("UPDATE worker_heartbeat SET last_seen=now(), status='previews', cpu_percent=%s WHERE id=1", (int(psutil.cpu_percent(interval=None)),))
+                        touch_healthcheck()
                     logger.info("Generating missing preview thumbnails for video id=%d", v["id"])
                     create_preview_thumbnails(vidsrc, actual_dir, v["duration_seconds"])
                     generated = True
@@ -634,6 +642,7 @@ def main():
             if not generated:
                 with pool.connection() as c:
                     c.execute("UPDATE worker_heartbeat SET last_seen=now(), status='idle', cpu_percent=%s WHERE id=1", (int(psutil.cpu_percent(interval=None)),))
+                    touch_healthcheck()
 
             time.sleep(5)
             continue
@@ -641,6 +650,7 @@ def main():
         logger.info("Starting encode for job id=%d (%s)", job["id"], job["orig_name"])
         with pool.connection() as c:
             c.execute("UPDATE worker_heartbeat SET last_seen=now(), status='encoding', cpu_percent=%s WHERE id=1", (int(psutil.cpu_percent(interval=None)),))
+            touch_healthcheck()
 
         src = os.path.join(UPLOAD_DIR, job["stored_name"])
         disabled_dir = os.path.join(HLS_DIR, f".disabled_{job['id']}")
