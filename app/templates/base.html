@@ -99,16 +99,14 @@
 
 <footer>
   <div class="footer-inner">
+    <span class="footer-version">{{ app_version }}</span>
+    {% if copyright_text %}
+      <span class="footer-sep">·</span>{{ copyright_text }}
+    {% endif %}
     {% for link in footer_links %}
-      {% if not loop.first %}<span class="footer-sep">·</span>{% endif %}
+      <span class="footer-sep">·</span>
       <a href="{{ link.url }}" target="_blank" rel="noopener noreferrer">{{ link.label }}</a>
     {% endfor %}
-    {% if copyright_text %}
-      {% if footer_links %}<span class="footer-sep">·</span>{% endif %}
-      {{ copyright_text }}
-    {% endif %}
-    {% if footer_links or copyright_text %}<span class="footer-sep">·</span>{% endif %}
-    <span class="footer-version">{{ app_version }}</span>
   </div>
 </footer>
 
