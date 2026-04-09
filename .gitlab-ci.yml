@@ -1,20 +1,15 @@
 stages:
   - deploy
-deploy_to_server:
+
+deploy:
   stage: deploy
-  image: alpine:3.20
+  image: alpine/curl
   only:
     - main
-  before_script:
-    - apk add --no-cache openssh
-    - mkdir -p ~/.ssh
-    - echo "$SSH_KEY" > ~/.ssh/id_ed25519
-    - chmod 600 ~/.ssh/id_ed25519
-    - ssh-keyscan $DEPLOY_HOST >> ~/.ssh/known_hosts
   script:
-    - ssh $DEPLOY_USER@$DEPLOY_HOST "
-        cd $DEPLOY_PATH &&
-        git fetch origin &&
-        git reset --hard origin/main &&
-        docker compose up -d --build
-      "
+    - |
+      env | grep '^DEPLOY_WEBHOOK' | while IFS='=' read -r name url; do
+        echo "Triggering ${name}..."
+        curl -f --show-error -X POST "$url"
+        echo " -> OK"
+      done
