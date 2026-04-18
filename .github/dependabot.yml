@@ -31,10 +31,6 @@ updates:
     labels:
       - dependencies
       - docker
-    ignore:
-      # Python 3.14 incompatible with Jinja2 3.1.6 (TypeError in template cache)
-      - dependency-name: "python"
-        versions: ["3.14", "3.14-slim"]
 
   - package-ecosystem: docker
     directory: "/worker"
@@ -44,9 +40,6 @@ updates:
     labels:
       - dependencies
       - docker
-    ignore:
-      - dependency-name: "python"
-        versions: ["3.14", "3.14-slim"]
 
   - package-ecosystem: docker-compose
     directory: "/"
