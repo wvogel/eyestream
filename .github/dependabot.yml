@@ -10,6 +10,16 @@ updates:
     labels:
       - dependencies
       - python
+    groups:
+      python-security:
+        applies-to: security-updates
+        patterns: ["*"]
+      python-minor-patch:
+        applies-to: version-updates
+        patterns: ["*"]
+        update-types:
+          - minor
+          - patch
 
   - package-ecosystem: pip
     directory: "/tests"
@@ -22,6 +32,16 @@ updates:
       - dependencies
       - python
       - tests
+    groups:
+      tests-security:
+        applies-to: security-updates
+        patterns: ["*"]
+      tests-minor-patch:
+        applies-to: version-updates
+        patterns: ["*"]
+        update-types:
+          - minor
+          - patch
 
   - package-ecosystem: docker
     directory: "/app"
@@ -31,6 +51,9 @@ updates:
     labels:
       - dependencies
       - docker
+    groups:
+      app-docker:
+        patterns: ["*"]
 
   - package-ecosystem: docker
     directory: "/worker"
@@ -40,6 +63,9 @@ updates:
     labels:
       - dependencies
       - docker
+    groups:
+      worker-docker:
+        patterns: ["*"]
 
   - package-ecosystem: docker-compose
     directory: "/"
@@ -49,6 +75,9 @@ updates:
     labels:
       - dependencies
       - docker
+    groups:
+      compose:
+        patterns: ["*"]
 
   - package-ecosystem: github-actions
     directory: "/"
@@ -58,3 +87,6 @@ updates:
     labels:
       - dependencies
       - github-actions
+    groups:
+      actions:
+        patterns: ["*"]
