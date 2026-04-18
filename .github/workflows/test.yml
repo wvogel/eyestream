@@ -26,12 +26,12 @@ jobs:
           - 5432:5432
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
-          python-version: "3.12"
+          python-version: "3.14"
           cache: pip
 
       - name: Install ffmpeg
@@ -42,6 +42,12 @@ jobs:
           pip install -r app/requirements.txt
           pip install pyyaml psycopg[binary] psycopg-pool psutil
           pip install -r tests/requirements-test.txt
+
+      - name: Create writable data dirs
+        run: |
+          mkdir -p /tmp/uploads /tmp/hls
+          echo "UPLOAD_DIR=/tmp/uploads" >> "$GITHUB_ENV"
+          echo "HLS_DIR=/tmp/hls" >> "$GITHUB_ENV"
 
       - name: Run tests
         env:
