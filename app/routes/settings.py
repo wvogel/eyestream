@@ -87,9 +87,9 @@ def settings_page(request: Request):
         ).fetchall()
     templates = _get_templates(request)
     return templates.TemplateResponse(
+        request,
         "settings.html",
         {
-            "request": request,
             "email": get_email(request),
             "categories": categories,
             "referer_ignores": referer_ignores,

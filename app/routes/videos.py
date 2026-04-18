@@ -111,9 +111,9 @@ def index(
 
     templates = _get_templates(request)
     return templates.TemplateResponse(
+        request,
         "index.html",
         {
-            "request": request,
             "videos": enriched,
             "page": page,
             "pages": pages,
@@ -140,8 +140,9 @@ def upload_page(request: Request):
         ).fetchall()
     templates = _get_templates(request)
     return templates.TemplateResponse(
+        request,
         "upload.html",
-        {"request": request, "email": get_email(request), "categories": categories},
+        {"email": get_email(request), "categories": categories},
     )
 
 

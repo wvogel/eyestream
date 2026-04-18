@@ -148,8 +148,9 @@ def health_detailed():
 def stats_page(request: Request):
     templates = _get_templates(request)
     return templates.TemplateResponse(
+        request,
         "stats.html",
-        {"request": request, "email": get_email(request)},
+        {"email": get_email(request)},
     )
 
 
@@ -177,9 +178,9 @@ def activity_page(request: Request, page: int = Query(1, ge=1)):
 
     templates = _get_templates(request)
     return templates.TemplateResponse(
+        request,
         "activity.html",
         {
-            "request": request,
             "email": get_email(request),
             "entries": enriched,
             "page": page,

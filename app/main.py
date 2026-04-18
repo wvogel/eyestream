@@ -77,10 +77,7 @@ def _parse_footer_links(s):
             links.append({"label": label.strip(), "url": url.strip()})
     return links
 
-# cache_size=0 works around a Python 3.14 + Jinja2 incompatibility where the
-# template cache key contains a dict and becomes unhashable.
 templates = Jinja2Templates(directory="templates")
-templates.env.cache = None
 templates.env.globals["app_version"] = APP_VERSION
 templates.env.globals["brand_name"] = BRAND_NAME
 templates.env.globals["product_name"] = PRODUCT_NAME
