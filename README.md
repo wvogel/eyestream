@@ -1,5 +1,10 @@
 # Eyestream
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Tests](https://github.com/wvogel/eyestream/actions/workflows/test.yml/badge.svg)](https://github.com/wvogel/eyestream/actions/workflows/test.yml)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
+[![Docker](https://img.shields.io/badge/docker-compose-blue?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
+
 Self-hosted video platform with HLS adaptive streaming, admin UI, and embed player. Upload videos, encode them automatically into multiple quality levels, and deliver them via static Nginx — no app server in the streaming path.
 
 ![Eyestream Admin UI](docs/screenshot-overview.png)
