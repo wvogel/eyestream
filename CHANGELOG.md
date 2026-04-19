@@ -5,6 +5,30 @@ All notable changes to Eyestream are documented here.
 The format is loosely based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [4.2.1] — 2026-04-19
+
+### Security
+- python-multipart 0.0.20 → 0.0.26 (HIGH: arbitrary file write, MEDIUM: DoS)
+- jinja2 3.1.5 → 3.1.6 (MEDIUM: sandbox breakout via attr filter)
+
+### Changed
+- Python 3.12 → 3.14 (app + worker Dockerfiles, CI)
+- fastapi 0.115.7 → 0.136.0
+- uvicorn 0.34.0 → 0.44.0
+- psycopg 3.2.6 → 3.3.3, psycopg-pool 3.2.6 → 3.3.0
+- pyyaml 6.0.2 → 6.0.3
+- pytest 8.3.5 → 9.0.3
+- valkey/valkey 8-alpine → 9-alpine
+- actions/checkout v4 → v6, actions/setup-python v5 → v6
+- Dependabot now groups updates into security + minor/patch PRs per ecosystem
+
+### Fixed
+- `TemplateResponse` calls updated to the new Starlette signature
+  `(request, name, context)` — the old form was deprecated and broke with the
+  FastAPI 0.136 / Starlette 0.45+ bump
+- GitHub Actions CI: `UPLOAD_DIR` / `HLS_DIR` point to `/tmp` so the GitHub
+  runner can write the data directories
+
 ## [4.2] — 2026-04
 
 ### Security
