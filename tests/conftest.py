@@ -1,7 +1,6 @@
 """Shared test configuration and fixtures."""
 import sys
 import os
-from unittest import mock
 
-# Prevent StaticFiles from failing when /app/static doesn't exist locally
-sys.modules["fastapi.staticfiles"] = mock.MagicMock()
+# Make the app/ directory importable
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "app"))

@@ -77,7 +77,8 @@ def _parse_footer_links(s):
             links.append({"label": label.strip(), "url": url.strip()})
     return links
 
-templates = Jinja2Templates(directory="templates")
+_TEMPLATES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates")
+templates = Jinja2Templates(directory=_TEMPLATES_DIR)
 templates.env.globals["app_version"] = APP_VERSION
 templates.env.globals["brand_name"] = BRAND_NAME
 templates.env.globals["product_name"] = PRODUCT_NAME
@@ -95,7 +96,8 @@ templates.env.globals["supported_languages"] = SUPPORTED_LANGUAGES
 templates.env.globals["default_language"] = DEFAULT_LANGUAGE
 app.state.templates = templates
 
-app.mount("/static", StaticFiles(directory="/app/static"), name="static")
+_STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
+app.mount("/static", StaticFiles(directory=_STATIC_DIR), name="static")
 
 
 # ---------------------------------------------------------------------
