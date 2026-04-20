@@ -34,7 +34,7 @@ def client():
     db.pool = mock_pool
 
     from main import app
-    with TestClient(app, raise_server_exceptions=False) as c:
+    with TestClient(app) as c:
         yield c
 
 
