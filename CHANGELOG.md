@@ -5,6 +5,16 @@ All notable changes to Eyestream are documented here.
 The format is loosely based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [4.2.2] — 2026-04-19
+
+### Fixed
+- Tests: resolve `templates/` and `static/` paths from the app module
+  (via `__file__`) instead of hardcoded `/app` container paths. Tests now
+  pass outside the container (local dev, GitHub Actions).
+- Tests: drop `fastapi.staticfiles` mock — the real `StaticFiles` works
+  now that the path is correct, and the MagicMock couldn't be `await`ed
+  by Starlette.
+
 ## [4.2.1] — 2026-04-19
 
 ### Security

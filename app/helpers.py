@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 UPLOAD_DIR = os.getenv("UPLOAD_DIR", "/data/uploads")
 HLS_DIR = os.getenv("HLS_DIR", "/data/hls")
-APP_VERSION = "Version 4.2.1"
+APP_VERSION = "Version 4.2.2"
 NPM_LOG_DIR = os.getenv("NPM_LOG_DIR", "/data/npm-logs")
 NPM_SITE_ID = os.getenv("NPM_SITE_ID", "")
 
