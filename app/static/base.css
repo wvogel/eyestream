@@ -142,7 +142,7 @@ header {
 .header-inner {
   max-width: 1200px;
   margin: auto;
-  padding: .65rem 2rem;
+  padding: .4rem 2rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -865,8 +865,8 @@ html[data-theme="dark"] .footer-inner a:hover {
   font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 0.04em;
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   padding: 0;
   border-radius: 6px;
   cursor: pointer;
@@ -892,8 +892,8 @@ html[data-theme="dark"] .footer-inner a:hover {
   border: none !important;
   color: #d4e4f0 !important;
   font-size: 1.05rem;
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   padding: 0;
   border-radius: 6px;
   cursor: pointer;
