@@ -142,7 +142,7 @@ header {
 .header-inner {
   max-width: 1200px;
   margin: auto;
-  padding: .4rem 2rem;
+  padding: .275rem 2rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -157,12 +157,12 @@ header {
 }
 
 .logo {
-  height: 30px;
+  height: 20px;
   margin-right: .45rem;
 }
 
 .header-flame {
-  height: 30px;
+  height: 20px;
   width: auto;
   filter: drop-shadow(0 2px 6px rgba(255, 122, 24, 0.35));
   transform: translateY(-.5px);
@@ -205,7 +205,7 @@ header {
 .header-example-link {
   color: #d4e4f0;
   font-size: .8rem;
-  padding: .3rem .45rem;
+  padding: .15rem .45rem;
   border-radius: 6px;
   display: inline-flex;
   align-items: center;
@@ -836,7 +836,7 @@ html[data-theme="dark"] .footer-inner a:hover {
 
 .header-nav-link {
   color: #d4e4f0;
-  padding: .35rem .45rem;
+  padding: .15rem .45rem;
   border-radius: 6px;
   display: inline-flex;
   align-items: center;
@@ -865,8 +865,8 @@ html[data-theme="dark"] .footer-inner a:hover {
   font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 0.04em;
-  width: 30px;
-  height: 30px;
+  width: 24px;
+  height: 24px;
   padding: 0;
   border-radius: 6px;
   cursor: pointer;
@@ -892,8 +892,8 @@ html[data-theme="dark"] .footer-inner a:hover {
   border: none !important;
   color: #d4e4f0 !important;
   font-size: 1.05rem;
-  width: 30px;
-  height: 30px;
+  width: 24px;
+  height: 24px;
   padding: 0;
   border-radius: 6px;
   cursor: pointer;
@@ -1148,7 +1148,7 @@ html[data-theme="dark"] .pagination a {
   }
 
   .header-inner {
-    padding: .55rem 1rem;
+    padding: .275rem 1rem;
   }
 
   .brand-title {
@@ -1157,12 +1157,12 @@ html[data-theme="dark"] .pagination a {
   }
 
   .logo {
-    height: 26px;
+    height: 17px;
     margin-right: .3rem;
   }
 
   .header-flame {
-    height: 26px;
+    height: 17px;
   }
 
   .page-title-bar {
