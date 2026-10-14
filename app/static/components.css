@@ -1173,6 +1173,100 @@ html[data-theme="dark"] .url-help-fake-btn {
 }
 
 /* =================================================
+   Download dropdown (details/summary, JS-free)
+================================================= */
+.dl-menu {
+  position: relative;
+}
+
+.dl-summary {
+  list-style: none;
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  border: 1px solid var(--secondary-border);
+  border-radius: var(--radius-sm);
+  background: var(--secondary-bg);
+  color: var(--secondary-text);
+  padding: .45rem .95rem;
+  font-size: .85rem;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+  box-shadow: 0 6px 14px rgba(20, 20, 80, 0.08);
+  transition: background-color var(--motion-fast) ease, border-color var(--motion-fast) ease, box-shadow var(--motion-fast) ease;
+}
+
+.dl-summary::-webkit-details-marker {
+  display: none;
+}
+
+.dl-summary:hover {
+  border-color: var(--secondary-border-hover);
+  background: var(--secondary-bg-hover);
+  box-shadow: 0 10px 18px rgba(20, 20, 80, 0.12);
+}
+
+.dl-icon {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+
+.dl-menu[open] .dl-summary {
+  border-color: var(--secondary-border-hover);
+}
+
+.dl-menu-panel {
+  position: absolute;
+  z-index: 20;
+  bottom: calc(100% + .35rem);
+  left: 0;
+  min-width: 190px;
+  display: flex;
+  flex-direction: column;
+  padding: .3rem;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-md);
+  background: var(--surface-card-top, #fff);
+  box-shadow: 0 14px 34px rgba(20, 20, 80, 0.18);
+}
+
+.dl-item {
+  display: block;
+  padding: .45rem .6rem;
+  border-radius: var(--radius-sm);
+  font-size: .85rem;
+  color: var(--ink, #141450);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.dl-item:hover {
+  background: var(--secondary-bg-hover, rgba(20, 20, 80, 0.06));
+  text-decoration: none;
+}
+
+html[data-theme="dark"] .dl-summary {
+  border-color: var(--secondary-border);
+  background: var(--secondary-bg);
+  color: var(--secondary-text);
+}
+
+html[data-theme="dark"] .dl-menu-panel {
+  background: var(--panel, #1b1b34);
+  border-color: var(--line, #2b2b54);
+}
+
+html[data-theme="dark"] .dl-item {
+  color: var(--ink, #eeeef1);
+}
+
+html[data-theme="dark"] .dl-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* =================================================
    Video Search
 ================================================= */
 .video-search {

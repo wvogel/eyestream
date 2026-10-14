@@ -4,6 +4,7 @@ import shutil
 import json
 import time
 import asyncio
+import tempfile
 import subprocess
 import logging
 from datetime import datetime, UTC
@@ -13,6 +14,7 @@ from urllib.parse import quote_plus
 
 from fastapi import APIRouter, Request, UploadFile, File, Form, Query, Body, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, StreamingResponse, FileResponse
+from starlette.background import BackgroundTask
 
 import db
 from helpers import (
@@ -21,7 +23,8 @@ from helpers import (
     get_email, format_local_dt, format_duration_mmss, parse_streams,
     parse_master_playlist, kill_process_group, format_encoding_duration,
     highlight_query_in_text, validate_upload, copy_with_size_limit,
-    log_activity, _resolve_hls_path,
+    log_activity, _resolve_hls_path, build_download_filename,
+    remux_rendition_to_mp4,
 )
 from i18n import t
 
@@ -484,6 +487,83 @@ def serve_video_file(vid: int, filename: str):
         raise HTTPException(status_code=404)
 
     return FileResponse(path)
+
+
+def _cleanup_file(path: str):
+    try:
+        os.remove(path)
+    except OSError:
+        pass
+
+
+@router.get("/video/{vid}/download/original")
+def download_original(request: Request, vid: int):
+    """Download the original uploaded file (archival, lossless)."""
+    with db.pool.connection() as c:
+        row = c.execute(
+            "SELECT orig_name, stored_name FROM videos WHERE id=%s", (vid,)
+        ).fetchone()
+
+    if not row or not row["stored_name"]:
+        raise HTTPException(status_code=404, detail=t("validation.video_not_found"))
+
+    # stored_name is written by our own upload code (basename only); guard anyway
+    stored = row["stored_name"]
+    if os.path.basename(stored) != stored:
+        raise HTTPException(status_code=404, detail=t("validation.source_not_found"))
+
+    src = os.path.join(UPLOAD_DIR, stored)
+    if not os.path.isfile(src):
+        raise HTTPException(status_code=404, detail=t("validation.source_not_found"))
+
+    ext = os.path.splitext(stored)[1] or ".mp4"
+    filename = build_download_filename(row["orig_name"], ext)
+    log_activity(get_email(request), "download", row.get("orig_name") or f"Video #{vid}", "Original")
+    return FileResponse(src, filename=filename, media_type="application/octet-stream")
+
+
+@router.get("/video/{vid}/download/{quality}")
+def download_quality(request: Request, vid: int, quality: str):
+    """Download a single quality as a standalone faststart MP4 (remuxed from HLS)."""
+    with db.pool.connection() as c:
+        row = c.execute(
+            "SELECT orig_name FROM videos WHERE id=%s", (vid,)
+        ).fetchone()
+
+    if not row:
+        raise HTTPException(status_code=404, detail=t("validation.video_not_found"))
+
+    # Only allow qualities that were actually produced for this video
+    available = {
+        r["playlist"].rsplit(".m3u8", 1)[0]
+        for r in parse_master_playlist(vid)
+        if r.get("playlist")
+    }
+    if quality not in available:
+        raise HTTPException(status_code=404, detail=t("validation.rendition_not_found"))
+
+    m3u8 = _resolve_hls_path(vid, f"{quality}.m3u8")
+    if not m3u8:
+        raise HTTPException(status_code=404, detail=t("validation.rendition_not_found"))
+
+    fd, tmp_path = tempfile.mkstemp(suffix=".mp4", prefix=f"dl_{vid}_{quality}_")
+    os.close(fd)
+    try:
+        remux_rendition_to_mp4(m3u8, tmp_path)
+    except Exception as exc:
+        _cleanup_file(tmp_path)
+        logger.error("Download remux failed for video %d (%s): %s", vid, quality, exc)
+        raise HTTPException(status_code=500, detail=t("validation.download_failed"))
+
+    base = (row["orig_name"] or "").strip() or "video"
+    filename = build_download_filename(f"{base}_{quality}", ".mp4")
+    log_activity(get_email(request), "download", row.get("orig_name") or f"Video #{vid}", quality)
+    return FileResponse(
+        tmp_path,
+        filename=filename,
+        media_type="video/mp4",
+        background=BackgroundTask(_cleanup_file, tmp_path),
+    )
 
 
 @router.post("/video/{vid}/category")

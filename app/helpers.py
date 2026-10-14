@@ -4,6 +4,7 @@ import json
 import html
 import signal
 import logging
+import subprocess
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
@@ -224,6 +225,47 @@ def copy_with_size_limit(src, dst_path: str, max_bytes: int) -> int:
                 )
             out.write(chunk)
     return written
+
+
+def build_download_filename(orig_name: str, ext: str) -> str:
+    """Build a safe download filename from a video title plus an extension.
+
+    Strips path separators and control characters (keeps unicode/spaces),
+    and falls back to "video" when the title is empty.
+    """
+    name = (orig_name or "").strip()
+    # Replace path separators and control chars (incl. newlines) with "_"
+    name = re.sub(r'[/\\\x00-\x1f\x7f]', "_", name)
+    name = name.strip()
+    if not name:
+        name = "video"
+    return f"{name}{ext}"
+
+
+REMUX_TIMEOUT = int(os.getenv("DOWNLOAD_REMUX_TIMEOUT", "600"))
+
+
+def remux_rendition_to_mp4(m3u8_path: str, out_path: str) -> None:
+    """Losslessly remux an HLS rendition playlist into a faststart MP4.
+
+    No re-encode (-c copy); just repackages the fMP4 segments into a single
+    progressive MP4 with the moov atom moved to the front (+faststart).
+    Raises RuntimeError if ffmpeg fails.
+    """
+    result = subprocess.run(
+        [
+            "ffmpeg", "-y", "-loglevel", "error",
+            "-i", m3u8_path,
+            "-c", "copy", "-movflags", "+faststart",
+            out_path,
+        ],
+        capture_output=True,
+        timeout=REMUX_TIMEOUT,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(
+            "ffmpeg remux failed: " + result.stderr.decode(errors="replace")
+        )
 
 
 def _resolve_hls_path(vid: int, filename: str) -> str | None:
