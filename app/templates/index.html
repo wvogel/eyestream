@@ -387,6 +387,6 @@ var PAGE_DATA = {
   pageSizeUrlSuffix: "{% if q_url %}&q={{ q_url }}{% endif %}{% if cat %}&cat={{ cat }}{% endif %}"
 };
 </script>
-<script src="/static/app.js?v={{ app_version }}"></script>
+<script src="{{ static_url('app.js') }}"></script>
 
 {% endblock %}

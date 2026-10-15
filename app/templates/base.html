@@ -6,9 +6,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
   <link rel="shortcut icon" type="image/x-icon" href="/static/favicon.ico">
-  <link rel="stylesheet" href="/static/base.css?v={{ app_version }}">
-  <link rel="stylesheet" href="/static/components.css?v={{ app_version }}">
-  <link rel="stylesheet" href="/static/pages.css?v={{ app_version }}">
+  <link rel="stylesheet" href="{{ static_url('base.css') }}">
+  <link rel="stylesheet" href="{{ static_url('components.css') }}">
+  <link rel="stylesheet" href="{{ static_url('pages.css') }}">
   <script>
   (function(){
     var t = localStorage.getItem("eyestream-theme");

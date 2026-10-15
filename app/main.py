@@ -17,7 +17,7 @@ from helpers import (  # noqa: F401 — re-exported for backwards compat (tests)
     FOOTER_LINKS, COPYRIGHT_TEXT, EXAMPLE_PAGE_URL,
     format_duration_mmss, format_local_dt, parse_streams,
     highlight_query_in_text, format_encoding_duration,
-    validate_upload, copy_with_size_limit,
+    validate_upload, copy_with_size_limit, static_url,
 )
 from i18n import (
     t, set_language, get_language, get_translations,
@@ -80,6 +80,7 @@ def _parse_footer_links(s):
 _TEMPLATES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates")
 templates = Jinja2Templates(directory=_TEMPLATES_DIR)
 templates.env.globals["app_version"] = APP_VERSION
+templates.env.globals["static_url"] = static_url
 templates.env.globals["brand_name"] = BRAND_NAME
 templates.env.globals["product_name"] = PRODUCT_NAME
 templates.env.globals["public_base"] = PUBLIC_BASE

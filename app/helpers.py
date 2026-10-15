@@ -3,6 +3,7 @@ import re
 import json
 import html
 import signal
+import hashlib
 import logging
 import subprocess
 from datetime import datetime
@@ -21,6 +22,7 @@ logger = logging.getLogger(__name__)
 
 UPLOAD_DIR = os.getenv("UPLOAD_DIR", "/data/uploads")
 HLS_DIR = os.getenv("HLS_DIR", "/data/hls")
+STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
 APP_VERSION = "Version 4.2.2"
 NPM_LOG_DIR = os.getenv("NPM_LOG_DIR", "/data/npm-logs")
 NPM_SITE_ID = os.getenv("NPM_SITE_ID", "")
@@ -225,6 +227,39 @@ def copy_with_size_limit(src, dst_path: str, max_bytes: int) -> int:
                 )
             out.write(chunk)
     return written
+
+
+_asset_version_cache: dict = {}
+
+
+def asset_version(filename: str) -> str:
+    """Content hash of a static asset for cache-busting (cached by mtime).
+
+    Changing a CSS/JS file changes its hash, so the ?v= URL changes and
+    browsers fetch the new file without a manual reload or version bump.
+    """
+    path = os.path.join(STATIC_DIR, filename)
+    try:
+        mtime = os.path.getmtime(path)
+    except OSError:
+        return "0"
+
+    hit = _asset_version_cache.get(filename)
+    if hit and hit[0] == mtime:
+        return hit[1]
+
+    h = hashlib.md5()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(65536), b""):
+            h.update(chunk)
+    ver = h.hexdigest()[:10]
+    _asset_version_cache[filename] = (mtime, ver)
+    return ver
+
+
+def static_url(filename: str) -> str:
+    """Build a cache-busted URL for a static asset: /static/<f>?v=<hash>."""
+    return f"/static/{filename}?v={asset_version(filename)}"
 
 
 def human_size(n_bytes) -> str | None:
