@@ -271,9 +271,15 @@
               {{ t('button.download') }}
             </summary>
             <div class="dl-menu-panel">
-              <a class="dl-item" href="/video/{{ v.id }}/download/original">{{ t('download.original') }}</a>
+              <a class="dl-item" href="/video/{{ v.id }}/download/original">
+                <span>{{ t('download.original') }}</span>
+                {% if v.download_original_size %}<span class="dl-size">{{ v.download_original_size }}</span>{% endif %}
+              </a>
               {% for r in v.renditions %}
-                <a class="dl-item" href="/video/{{ v.id }}/download/{{ r.playlist[:-5] }}">{{ r.resolution.split("x")[1] }}p · MP4</a>
+                <a class="dl-item" href="/video/{{ v.id }}/download/{{ r.playlist[:-5] }}">
+                  <span>{{ r.resolution.split("x")[1] }}p · MP4</span>
+                  {% if r.size_label %}<span class="dl-size">{{ r.size_label }}</span>{% endif %}
+                </a>
               {% endfor %}
             </div>
           </details>

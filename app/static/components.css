@@ -1233,13 +1233,22 @@ html[data-theme="dark"] .url-help-fake-btn {
 }
 
 .dl-item {
-  display: block;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1.2rem;
   padding: .45rem .6rem;
   border-radius: var(--radius-sm);
   font-size: .85rem;
   color: var(--ink, #141450);
   text-decoration: none;
   white-space: nowrap;
+}
+
+.dl-size {
+  font-size: .78rem;
+  opacity: .6;
+  font-variant-numeric: tabular-nums;
 }
 
 .dl-item:hover {

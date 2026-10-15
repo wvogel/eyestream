@@ -83,6 +83,58 @@ def test_build_download_filename_none_falls_back():
 
 
 # ------------------------------------------------------------------
+# human_size
+# ------------------------------------------------------------------
+
+def test_human_size_none():
+    assert helpers.human_size(None) is None
+
+
+def test_human_size_bytes():
+    assert helpers.human_size(500) == "500 B"
+
+
+def test_human_size_kilobytes():
+    assert helpers.human_size(2048) == "2 KB"
+
+
+def test_human_size_megabytes():
+    assert helpers.human_size(48 * 1024 * 1024) == "48 MB"
+
+
+def test_human_size_gigabytes_one_decimal():
+    assert helpers.human_size(int(1.4 * 1024 ** 3)) == "1.4 GB"
+
+
+def test_human_size_gigabyte_exact():
+    assert helpers.human_size(1024 ** 3) == "1.0 GB"
+
+
+# ------------------------------------------------------------------
+# rendition_size_bytes
+# ------------------------------------------------------------------
+
+def test_rendition_size_sums_segments(tmp_path, monkeypatch):
+    hls_root = str(tmp_path / "hls")
+    vid_dir = os.path.join(hls_root, "7")
+    _make_hls_rendition(vid_dir, "720p")
+    monkeypatch.setattr(helpers, "HLS_DIR", hls_root)
+
+    expected = sum(
+        os.path.getsize(os.path.join(vid_dir, f))
+        for f in os.listdir(vid_dir)
+        if f == "init_720p.mp4" or (f.startswith("720p_") and f.endswith(".m4s"))
+    )
+    assert expected > 0
+    assert helpers.rendition_size_bytes(7, "720p") == expected
+
+
+def test_rendition_size_missing_returns_none(tmp_path, monkeypatch):
+    monkeypatch.setattr(helpers, "HLS_DIR", str(tmp_path / "hls"))
+    assert helpers.rendition_size_bytes(999, "720p") is None
+
+
+# ------------------------------------------------------------------
 # remux_rendition_to_mp4
 # ------------------------------------------------------------------
 
@@ -244,6 +296,24 @@ def test_index_card_shows_download_links(client, ready_video):
     vid = ready_video["id"]
     assert f"/video/{vid}/download/original" in html
     assert f"/video/{vid}/download/720p" in html
+
+
+def test_index_card_shows_rendition_size(client, ready_video):
+    r = client.get("/?per_page=100")
+    html = r.text
+    expected = helpers.human_size(
+        helpers.rendition_size_bytes(ready_video["id"], "720p")
+    )
+    assert expected is not None
+    assert 'class="dl-size"' in html
+    assert expected in html
+
+
+def test_index_card_shows_original_size(client, original_video):
+    r = client.get("/?per_page=100")
+    html = r.text
+    # the 25-byte original upload is reported next to the Original link
+    assert helpers.human_size(len(original_video["bytes"])) in html
 
 
 def test_download_quality_cleans_up_temp_file(client, ready_video):

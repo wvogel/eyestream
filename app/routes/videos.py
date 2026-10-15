@@ -24,7 +24,7 @@ from helpers import (
     parse_master_playlist, kill_process_group, format_encoding_duration,
     highlight_query_in_text, validate_upload, copy_with_size_limit,
     log_activity, _resolve_hls_path, build_download_filename,
-    remux_rendition_to_mp4,
+    remux_rendition_to_mp4, human_size, rendition_size_bytes,
 )
 from i18n import t
 
@@ -102,6 +102,14 @@ def index(
         d["encoded_local"] = format_local_dt(d.get("encoded_at"))
         d["streams"] = parse_streams(d.get("streams_json"))
         d["renditions"] = parse_master_playlist(d["id"])
+        for r in d["renditions"]:
+            q = r["playlist"][:-5] if r.get("playlist", "").endswith(".m3u8") else None
+            r["size_label"] = human_size(rendition_size_bytes(d["id"], q)) if q else None
+        orig_path = os.path.join(UPLOAD_DIR, d["stored_name"]) if d.get("stored_name") else None
+        d["download_original_size"] = (
+            human_size(os.path.getsize(orig_path))
+            if orig_path and os.path.isfile(orig_path) else None
+        )
         d["encoding_duration"] = format_encoding_duration(
             d.get("started_at"),
             d.get("encoded_at")

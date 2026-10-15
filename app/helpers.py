@@ -227,6 +227,37 @@ def copy_with_size_limit(src, dst_path: str, max_bytes: int) -> int:
     return written
 
 
+def human_size(n_bytes) -> str | None:
+    """Format a byte count as a rounded, human-readable size (B/KB/MB/GB)."""
+    if n_bytes is None:
+        return None
+    n = int(n_bytes)
+    if n < 1024:
+        return f"{n} B"
+    if n < 1024 ** 2:
+        return f"{round(n / 1024)} KB"
+    if n < 1024 ** 3:
+        return f"{round(n / 1024 ** 2)} MB"
+    return f"{n / 1024 ** 3:.1f} GB"
+
+
+def rendition_size_bytes(vid: int, quality: str) -> int | None:
+    """Total on-disk size of one rendition (init + segments).
+
+    Approximates the remuxed MP4 size without generating it, since the
+    download is a lossless container copy of these same fMP4 segments.
+    """
+    for d in (os.path.join(HLS_DIR, str(vid)), os.path.join(HLS_DIR, f".disabled_{vid}")):
+        if not os.path.isdir(d):
+            continue
+        total = 0
+        for fn in os.listdir(d):
+            if fn == f"init_{quality}.mp4" or (fn.startswith(f"{quality}_") and fn.endswith(".m4s")):
+                total += os.path.getsize(os.path.join(d, fn))
+        return total or None
+    return None
+
+
 def build_download_filename(orig_name: str, ext: str) -> str:
     """Build a safe download filename from a video title plus an extension.
 
